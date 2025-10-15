@@ -1,5 +1,7 @@
-from apriltag_detection.basic_apriltag_roi_detection import detect_apriltag_from_image
+from apriltag_detection.apriltag_cv_detection import *
 
 if __name__ == "__main__":
-    filepath = "Experiments/apriltag_detection/mirror_apriltags.png"
-    detect_apriltag_from_image(filepath)
+    at_detector = initialise_detector()
+    cap = cv2.VideoCapture(0)
+    detect_apriltag_from_cv(cap, at_detector)
+    
