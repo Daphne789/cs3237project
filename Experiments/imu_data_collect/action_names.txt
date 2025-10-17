@@ -1,0 +1,7 @@
+The following are the Action Labels
+LTSM should be able to classify
+ 
+left
+right
+straight
+jump
