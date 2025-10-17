@@ -3,9 +3,9 @@ This project helps in tracking IMU data for various motions with the output bein
 === Usage ===
 
 1. Build the hardware (see section below)
-2. Upload .ino code to ESP32.
+2. Connect ESP32 and upload .ino code.
 3. Close the IDE so that the port is not in use.
-4. Start the .py file in the consol, providing the motion being tracked. Eg. "python imu_data_collect.py left"
+4. Start the .py file in the consol, providing the motion being tracked. Eg. "python imu_data_collect.py left". The python tracks the serial output from the ESP32!
 5. Hold button to start tracking a motion. Release button to stop the tracking of the motion. Each button press corresponds to one motion tracked with many gyro and accel data of same action_id.
 6. ctrl + c to stop the tracking of motions. The .csv file should be accessible in the same directory as the .py file. 
 
