@@ -6,7 +6,7 @@ import sys
 # Configuration
 SERIAL_PORT = 'COM7'
 BAUD_RATE = 115200
-CSV_FILENAME = f'gyro_data_{datetime.now().strftime("%Y%m%d_%H%M%S")}.csv'
+CSV_FILENAME = f'imu_data_{datetime.now().strftime("%Y%m%d_%H%M%S")}.csv'
 
 def main():
     if len(sys.argv) < 2:
