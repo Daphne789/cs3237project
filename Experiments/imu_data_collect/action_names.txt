@@ -5,3 +5,5 @@ left
 right
 straight
 jump
+curve-left
+curve-right
