@@ -6,7 +6,6 @@ if __name__ == "__main__b":
     cap = cv2.VideoCapture(0)
     if cap.isOpened():
         detect_apriltag_from_cv(cap, detector)
-
     
 if __name__  == "__main__1":
     detector = initialise_detector()
