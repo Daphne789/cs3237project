@@ -16,15 +16,15 @@ def initialise_detector():
     )
 
 def detect_apriltag_from_array(img_array, detector, is_plot=True):    
-    # img_array = cv2.cvtColor(img_array, cv2.COLOR_RGBA2GRAY) #change rgba to black and white channels
+    img_array = cv2.cvtColor(img_array, cv2.COLOR_RGBA2GRAY) #change rgba to black and white channels
     print("Img array shape:", img_array.shape)
 
     detection = detector.detect(img_array)
     print(len(detection), "april tags found")
-
+    
     for i in range(len(detection)):
         april_tag_detected = detection[i]
-        print(april_tag_detected)
+        print(i, april_tag_detected)
         corners = detection[i].corners
         x_coords = []
         y_coords = []
