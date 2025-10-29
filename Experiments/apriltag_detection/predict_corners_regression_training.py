@@ -35,20 +35,28 @@ model_reg = keras.Sequential([
     keras.layers.MaxPooling2D((2,2)),
     keras.layers.Conv2D(32, (3,3), activation='relu'),
     keras.layers.MaxPooling2D((2,2)),
+    keras.layers.Conv2D(64, (3,3), activation='relu'),
+    keras.layers.MaxPooling2D((2,2)),
     keras.layers.Flatten(),
+    keras.layers.Dense(128, activation='relu'),
     keras.layers.Dense(64, activation='relu'),
     keras.layers.Dense(8, activation='linear')
 ])
 
-model_reg.compile(optimizer='adam', loss='mse', metrics=['mae'])
+model_reg.compile(
+    optimizer='adam', 
+    loss='mse', 
+    metrics=['mae']
+)
 
-history = model_reg.fit(
+history_regressor = model_reg.fit(
     X_train, y_train,
-    epochs=30, batch_size=16,
+    epochs=80, batch_size=16,
     validation_split=0.1
 )
 
 test_loss, test_mae = model_reg.evaluate(X_test, y_test)
-print(f"Test mae: {test_mae:.4f}")
+print("Test mae:", test_mae)
+print("Test loss:", test_loss)
 
 model_reg.save("apriltag_corner_regressor.keras")
