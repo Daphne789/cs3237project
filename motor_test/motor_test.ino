@@ -26,7 +26,7 @@ void loop() {
     digitalWrite(STBY,HIGH);
     //set motor A and motor B speed, 0-255 255 being the fastest
     analogWrite(PWMA,255);
-    analogWrite(PWMB,127);
+    analogWrite(PWMB,127); //B is half speed
     //set motor A direction
     digitalWrite(AIN1,HIGH); // this will go forward
     //set motor B direction
