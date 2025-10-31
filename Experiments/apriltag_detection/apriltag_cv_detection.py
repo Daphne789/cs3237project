@@ -32,7 +32,7 @@ def generate_training_data(detector, image_folder_path, is_save_to_csv=True):
     sorted_files = sorted(os.listdir(image_folder_path), key=lambda x: int(x.split('_')[1].split('.')[0]))
     data = []
     for filename in sorted_files:
-        print("File name:", filename)
+        #print("File name:", filename)
         joined_filepath = os.path.join(image_folder_path, filename)
         detection = detect_apriltag_from_image(joined_filepath, detector, is_plot=False)
         has_apriltag = len(detection) != 0

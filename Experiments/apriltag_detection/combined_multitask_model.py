@@ -9,6 +9,9 @@ import tensorflow as tf
 
 df = pd.read_csv('apriltag_train_data.csv')
 
+OG_H = 240
+OG_W = 320
+
 IMG_W = 64
 IMG_H = 64
 images = []
@@ -29,8 +32,8 @@ for _, row in df.iterrows():
 
     if has_tag:
         c = np.array([float(x) for x in row['corners'].split(',')])
-        c[0::2] /= 240.0
-        c[1::2] /= 240.0
+        c[0::2] /= OG_W
+        c[1::2] /= OG_H
     else:
         c = np.zeros(8, dtype=np.float32)
 
@@ -93,10 +96,11 @@ history = model.fit(
 )
 
 eval_results = model.evaluate(X_test, {'class_output': y_cls_test, 'corner_output': y_reg_test})
-print("Clf loss:", eval_results[1])
-print("Reg loss (MSE):", eval_results[2])
-print("clf accuracy percentage:", eval_results[3]*100)
-print("reg mae:", eval_results[4])
+print("clf loss:", eval_results[1])
+print("reg loss mse:", eval_results[2])
+print("clf accuracy %:", eval_results[3] * 100)
+print("corner reg mae (normalised):", eval_results[4])
+print("corner reg mae (pixels):", eval_results[4] * OG_W, "px (approx horizontal scale)")
 
 model.save("apriltag_multitask.keras")
 
