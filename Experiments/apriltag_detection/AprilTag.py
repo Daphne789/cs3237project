@@ -1,5 +1,6 @@
 import pandas as pd
 import numpy as np
+import cv2
 
 class AprilTag:
     def __init__(self, corners_arr=None, img_filepath=None, csv_path=None, csv_row=None):
@@ -28,5 +29,5 @@ class AprilTag:
         print("Bottom Left:", self.bottom_left)
         print("Bottom Right:", self.bottom_right)
         
-    #def compute_distance(self):
+    def compute_distance(self):
         

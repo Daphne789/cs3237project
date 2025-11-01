@@ -17,14 +17,14 @@ def initialise_detector():
 
 def detect_apriltag_from_array(img_array, detector, is_plot=True):    
     img_array = cv2.cvtColor(img_array, cv2.COLOR_RGBA2GRAY) #change rgba to black and white channels
-    print("Img array shape:", img_array.shape)
+    #print("Img array shape:", img_array.shape)
 
     detection = detector.detect(img_array)
-    print(len(detection), "april tags found")
+    #print(len(detection), "april tags found")
     
     for i in range(len(detection)):
         april_tag_detected = detection[i]
-        print(i, april_tag_detected)
+        #print(i, april_tag_detected)
         corners = detection[i].corners
         x_coords = []
         y_coords = []
@@ -55,3 +55,46 @@ def detect_apriltag_from_image(img_filepath, detector, is_plot=True):
     img_array = np.asarray(image, dtype=np.uint8)
     detection = detect_apriltag_from_array(img_array, detector, is_plot=is_plot)
     return detection
+
+
+def plot_predicted_corners(img_array, corners, label="Predicted"):
+    """
+    Plots an image with the given predicted corners.
+    
+    Parameters:
+    - img_array: 2D (grayscale) or 3D (RGB) numpy array of the image
+    - corners: array-like of shape (8,), representing 4 corners as [x0,y0,x1,y1,x2,y2,x3,y3]
+    - label: optional text label to mark on the center of the corners
+    """
+    plt.figure()
+    # Show the image
+    if img_array.ndim == 2:
+        plt.imshow(img_array, cmap="gray")
+    else:
+        plt.imshow(img_array)
+
+    # Extract corner coordinates
+    x_coords = corners[0::2]
+    y_coords = corners[1::2]
+
+    # Draw the quadrilateral
+    for j in range(4):
+        curr_x = [x_coords[j], x_coords[(j + 1) % 4]]
+        curr_y = [y_coords[j], y_coords[(j + 1) % 4]]
+        plt.plot(curr_x, curr_y, c="red", linewidth=2)
+
+    # Draw center and label
+    center_x = np.mean(x_coords)
+    center_y = np.mean(y_coords)
+    plt.scatter(center_x, center_y, c="yellow", s=40)
+    plt.text(center_x, center_y, label, color="yellow", fontsize=12, ha="center")
+
+    plt.axis("off")
+    plt.tight_layout()
+    plt.show()
+
+if __name__ == "__main__":
+    detector = initialise_detector()
+    filepath = "captured_frames/frame_5629.jpg"
+    detection = detect_apriltag_from_image(filepath, detector)
+    #print(detection)

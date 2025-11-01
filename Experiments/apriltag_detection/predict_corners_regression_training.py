@@ -59,4 +59,5 @@ test_loss, test_mae = model_reg.evaluate(X_test, y_test)
 print("Test mae:", test_mae)
 print("Test loss:", test_loss)
 
-model_reg.save("apriltag_corner_regressor.keras")
+#model_reg.save("apriltag_corner_regressor.keras")
+model_reg.save("apriltag_corner_regressor_2.keras")

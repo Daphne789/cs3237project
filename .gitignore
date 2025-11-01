@@ -1,3 +1,4 @@
 Experiments/apriltag_detection/__pycache__
 venv/
 captured_frames/
+captured_frames_old/
