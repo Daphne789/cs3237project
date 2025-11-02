@@ -13,7 +13,7 @@ print("Input details:", input_details)
 print("Output details:", output_details)
 
 # Pick a sample image to test
-img = cv2.imread("captured_frames/frame_25.jpg", cv2.IMREAD_GRAYSCALE)
+img = cv2.imread(input("Input img path: "), cv2.IMREAD_GRAYSCALE)
 img = cv2.resize(img, (64, 64)).astype(np.float32) / 255.0
 img = np.expand_dims(img, axis=(0, -1))
 

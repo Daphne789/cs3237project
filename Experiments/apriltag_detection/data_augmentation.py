@@ -123,5 +123,5 @@ def show_augmented_example(img, corners):
 
 if __name__ == "__main__":
     df = pd.read_csv("apriltag_train_data.csv")
-    df_ranged = df.iloc[6731:]
+    df_ranged = df.iloc[18:3912]
     augmented_df = augment_and_save_images(df_ranged)
