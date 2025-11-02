@@ -29,5 +29,18 @@ class AprilTag:
         print("Bottom Left:", self.bottom_left)
         print("Bottom Right:", self.bottom_right)
         
-    def compute_distance(self):
-        
+    def reorder_corners(corners):
+        # Reorder corners arr in TL TR BR BL order
+        corners = np.array(corners, dtype=np.float32)
+        if corners.shape != (4, 2):
+            raise ValueError(f"Expected 4 corners of shape (4,2), got {corners.shape}")
+        s = corners.sum(axis=1) # x + y -> TL has smallest sum, BR has largest
+        diff = np.diff(corners, axis=1)  # y - x -> TR smallest diff, BL largest
+
+        tl = corners[np.argmin(s)]
+        br = corners[np.argmax(s)]
+        tr = corners[np.argmin(diff)]
+        bl = corners[np.argmax(diff)]
+
+        ordered = np.array([tl, tr, br, bl], dtype=np.float32)
+        return ordered
