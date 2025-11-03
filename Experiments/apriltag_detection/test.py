@@ -47,7 +47,7 @@ def play_as_video(fps=30):
     cv2.destroyAllWindows()
 
 rename_in_correct_order()
-play_as_video()
+#play_as_video()
 
 # for frame in curr_frames:
 #     old_name = frame.name

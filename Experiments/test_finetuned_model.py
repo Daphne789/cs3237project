@@ -2,6 +2,7 @@ import cv2
 import numpy as np
 from tensorflow.keras.models import load_model
 import matplotlib.pyplot as plt
+from distance.estimate_dist import calc_dist
 
 OG_W = 320
 OG_H = 240 
@@ -50,5 +51,5 @@ pred_corners_px[1::2] *= OG_H
 
 print("Predicted corner coordinates (pixels):")
 print(pred_corners_px.reshape(4, 2))
-
+calc_dist(pred_corners_px.reshape(4, 2))
 plot_predicted_corners(og_img, pred_corners_px)
