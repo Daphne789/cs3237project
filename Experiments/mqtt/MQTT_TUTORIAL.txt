@@ -1,0 +1,82 @@
+Using Mosquitto MQTT Broker on Windows through WSL with Ubuntu 
+
+=== INSTALLING WSL WITH UBUNTU == 
+
+Powershell:
+	wsl --install -d Ubuntu
+
+Restart needed most likely.
+
+Start Ubuntu app.
+
+=== SETUP WSL UBUNTU ===
+
+Setup username and password.
+
+Update packages
+Bash:
+	sudo apt update && sudo apt upgrade -y
+
+=== INSTALL MOSQUITTO BROKER AND CLINET ON WSL UBUNTU ===
+
+Bash:
+	sudo apt install mosquitto mosquitto-clients -y
+
+Try Mosquitto:
+
+1. Start Broker
+Bash:
+	mosquitto
+2. Subscribe to a topic (in separate terminal)
+Bash:
+	mosquitto_sub -h localhost -t test/topic
+2. Publish a message (in separate terminal)
+Bash:
+	mosquitto_pub -h localhost -t test/topic -m "Hello from WSL"
+
+
+=== ACCESS MOSQUITTO BROKER FROM WINDOWS OR EXTERNAL DEVICES ===
+
+Note: Any command in Powershell should be run as administrator 
+
+Bash (in WSL Ubuntu):
+	sudo vim /etc/mosquitto/mosquitto.conf
+
+Comment out the original configurations and add the following:
+	allow_anonymous true
+	listener 1883 0.0.0.0
+
+Turn on your phone's hotspot. 
+Make sure you are not using a VPN.
+
+Connect Windows to your phone's hotspot.
+
+Craete a firewall rule to open port 1883 for MQTT traffic using:
+Powershell:
+	New-NetFirewallRule -DisplayName "Mosquitto MQTT WSL" -Direction Inbound -LocalPort 1883 -Protocol TCP -Action Allow
+
+Get Ubuntu's IP address for the next step:
+Bash:
+	hostname -I
+
+Forward port 1883 to WSL Ubuntu's IP. Replace <WSL_Ubuntu_IP> with the WSL Ubuntu's IP outputted from the last step.
+Powershell:
+	netsh interface portproxy add v4tov4 listenport=1883 listenaddress=0.0.0.0 connectport=1883 connectaddress=<WSL_Ubuntu_IP>
+
+Start Mosquitto on Ubuntu
+Bash:
+	mosquitto -c /etc/mosquitto/mosquitto.conf
+
+Get Window's IP for the next step:
+Powershell:
+	ipconfig
+Most likely the one under Wireless LAN adapter Wi-Fi > IPv4 Address.
+
+Update the ESP32 code to include your hotspot Username and Password. 
+Also, update the ESP32 code to use Window's IP address outputted from the last step.   
+Upload the code to the ESP32 and monitor the serial output to see if connection can be made.
+Remember to install the ESP32MQTTClient.h library if you don't have it.
+
+Future uses:
+Since IPs can be dynamic, the ESP32 code may need to be updated to the new Window's IP, or forwarding to a new WSL Ubuntu IP may be needed.
+Perhaps Window's firewall could remove the opened port rule and thus need to open again...
