@@ -13,9 +13,9 @@ JSON schema:
 Adafruit_MPU6050 mpu;
 
 // WIFI CONFIG: set your WiFi and server
-const char* WIFI_SSID = "Galaxy A53 5G225D";
-const char* WIFI_PASS = "sdci3924";
-const char* SERVER_URL = "http://10.81.21.177:5000/ingest"; // replace with your PC IP
+const char* WIFI_SSID = "";
+const char* WIFI_PASS = "";
+const char* SERVER_URL = "http://<laptop_ip>:5000/ingest"; // replace with your PC IP
 const char* DEVICE_ID  = "imu01";
 
 const uint32_t SAMPLE_DELAY_MS = 20; // ~50 Hz
