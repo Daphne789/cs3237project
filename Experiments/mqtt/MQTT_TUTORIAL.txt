@@ -35,7 +35,7 @@ Bash:
 	mosquitto_pub -h localhost -t test/topic -m "Hello from WSL"
 
 
-=== ACCESS MOSQUITTO BROKER FROM WINDOWS OR EXTERNAL DEVICES ===
+=== ACCESS MOSQUITTO BROKER ON WSL UBUNTU FROM WINDOWS OR EXTERNAL DEVICES ===
 
 Note: Any command in Powershell should be run as administrator 
 
