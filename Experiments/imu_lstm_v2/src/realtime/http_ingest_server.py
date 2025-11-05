@@ -714,7 +714,7 @@ def flush_log(out_dir: str | None = None):
 
 @app.get("/control")
 def get_control(device_id: str = "imu01"):
-    ensure_window(device_id); 
+    ensure_window(device_id)
     ctl = state.get("ctl", {}).get(device_id)
     if not ctl: 
         return {"ok": False, "error": "no control yet"}
