@@ -47,9 +47,9 @@ Comment out the original configurations and add the following:
 	listener 1883 0.0.0.0
 
 Turn on your phone's hotspot. 
-Make sure you are not using a VPN.
 
 Connect Windows to your phone's hotspot.
+Make sure you are not using a VPN.
 
 Craete a firewall rule to open port 1883 for MQTT traffic using:
 Powershell:
