@@ -51,7 +51,7 @@ Turn on your phone's hotspot.
 Connect Windows to your phone's hotspot.
 Make sure you are not using a VPN.
 
-Craete a firewall rule to open port 1883 for MQTT traffic using:
+Create a firewall rule to open port 1883 for MQTT traffic using:
 Powershell:
 	New-NetFirewallRule -DisplayName "Mosquitto MQTT WSL" -Direction Inbound -LocalPort 1883 -Protocol TCP -Action Allow
 
