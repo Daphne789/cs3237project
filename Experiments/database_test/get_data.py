@@ -9,7 +9,7 @@ conn = psycopg2.connect(
 )
 
 cur = conn.cursor()
-cur.execute("SELECT * FROM movement_data;")
+cur.execute("SELECT * FROM cam_data;")
 rows = cur.fetchall()
 conn.commit()
 conn.close()
