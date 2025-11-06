@@ -716,11 +716,15 @@ def flush_log(out_dir: str | None = None):
 def get_control(device_id: str = "imu01"):
     ensure_window(device_id)
     ctl = state.get("ctl", {}).get(device_id)
-    if not ctl:
+    if not ctl: 
         return {"ok": False, "error": "no control yet"}
+    latest = state["latest"].get(device_id, {})
     return {
         "ok": True,
         "device_id": device_id,
+        "command": latest.get("command", "NONE"),
+        "label": latest.get("label", "NONE"),
+        "confidence": float(latest.get("confidence", 0.0)),
         "speed": float(ctl.get("speed_lp", 0.0)),
         "yaw_rate_dps": float(ctl.get("yaw_rate_lp_dps", 0.0)),
         "turn_angle_deg": float(ctl.get("angle_deg", 0.0)),
@@ -729,6 +733,19 @@ def get_control(device_id: str = "imu01"):
         "timestamp": time.time(),
     }
 
+@app.get("/command")
+def get_command(device_id: str = "imu01"):
+    """
+    Minimal endpoint for clients that only need the action command.
+    """
+    latest = state["latest"].get(device_id, {})
+    return {
+        "ok": True, "device_id": device_id,
+        "command": latest.get("command", "NONE"),
+        "label": latest.get("label", "NONE"),
+        "confidence": float(latest.get("confidence", 0.0)),
+        "timestamp": float(latest.get("timestamp", time.time()))
+    }
 
 @app.post("/reset_angle")
 def reset_angle(device_id: str = "imu01"):
