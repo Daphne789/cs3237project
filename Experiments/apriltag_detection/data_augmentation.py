@@ -20,24 +20,22 @@ def read_image_for_augmentation(img_path):
 # ---- Define augmentation pipelines ----
 augment_with_corners = A.Compose([
     A.RandomBrightnessContrast(p=0.5),
-    A.HueSaturationValue(p=0.4),
     A.Affine(
         scale=(0.9, 1.1),
         translate_percent={"x": (-0.1, 0.1), "y": (-0.1, 0.1)},
         rotate=(-15, 15),
         shear=(-5, 5),
-        mode=cv2.BORDER_REFLECT_101,  # avoids black triangles
+        mode=cv2.BORDER_REFLECT_101,
         p=0.9
     )
 ],
 keypoint_params=A.KeypointParams(format='xy', remove_invisible=False))
 
 augment_no_corners = A.Compose([
-    A.RandomBrightnessContrast(p=0.7),
-    A.HueSaturationValue(p=0.5),
-    A.MotionBlur(p=0.3),
-    A.GaussianBlur(p=0.3),
-    A.ISONoise(p=0.3),
+    A.RandomBrightnessContrast(p=0.6),
+    A.HueSaturationValue(p=0.4),
+    A.MotionBlur(p=0.2),
+    A.ISONoise(p=0.15)
 ], p=1.0)
 
 # ---- Augment and save ----
@@ -123,5 +121,5 @@ def show_augmented_example(img, corners):
 
 if __name__ == "__main__":
     df = pd.read_csv("apriltag_train_data.csv")
-    df_ranged = df.iloc[18:3912]
-    augmented_df = augment_and_save_images(df_ranged)
+    #df_ranged = df.iloc[2811:2812]
+    augmented_df = augment_and_save_images(df)
