@@ -8,8 +8,8 @@ from fastapi import FastAPI, Body
 from fastapi.responses import JSONResponse, HTMLResponse
 from collections import deque
 from datetime import datetime
-from contextlib import asynccontextmanager
-import asyncio
+# from contextlib import asynccontextmanager
+# import asyncio
 
 # Make "src" importable
 SRC_DIR = Path(__file__).resolve().parents[1]
@@ -25,40 +25,40 @@ from Experiments.imu_lstm_v2.src.realtime.motion_control import (
 )
 
 
-# app = FastAPI()
-@asynccontextmanager
-async def lifespan(app: FastAPI):
-    # Startup: Run after server is ready
-    async def run_startup_requests():
-        await asyncio.sleep(3)  # Wait for IMU data to arrive
+app = FastAPI()
+# @asynccontextmanager
+# async def lifespan(app: FastAPI):
+#     # Startup: Run after server is ready
+#     async def run_startup_requests():
+#         await asyncio.sleep(3)  # Wait for IMU data to arrive
 
-        device_id = "imu01"
+#         device_id = "imu01"
 
-        try:
-            # Calibrate gravity
-            print("[INFO] Running auto-calibration...")
-            result = calibrate_gravity(device_id)
-            print(f"[INFO] Calibrate gravity result: {result}")
+#         try:
+#             # Calibrate gravity
+#             print("[INFO] Running auto-calibration...")
+#             result = calibrate_gravity(device_id)
+#             print(f"[INFO] Calibrate gravity result: {result}")
 
-            await asyncio.sleep(2)
+#             # await asyncio.sleep(2)
 
-            # Auto yaw
-            print("[INFO] Running auto-yaw detection...")
-            result = auto_yaw(device_id)
-            print(f"[INFO] Auto yaw result: {result}")
-        except Exception as e:
-            print(f"[WARN] Startup requests failed: {e}")
+#             # Auto yaw
+#             print("[INFO] Running auto-yaw detection...")
+#             result = auto_yaw(device_id)
+#             print(f"[INFO] Auto yaw result: {result}")
+#         except Exception as e:
+#             print(f"[WARN] Startup requests failed: {e}")
 
-    # Schedule the background task
-    asyncio.create_task(run_startup_requests())
+#     # Schedule the background task
+#     asyncio.create_task(run_startup_requests())
 
-    yield  # Server runs here
+#     yield  # Server runs here
 
-    # Shutdown (cleanup if needed)
-    pass
+#     # Shutdown (cleanup if needed)
+#     pass
 
 
-app = FastAPI(lifespan=lifespan)
+# app = FastAPI(lifespan=lifespan)
 
 YAW_IDX = {"gx": 0, "gy": 1, "gz": 2}
 
@@ -108,6 +108,12 @@ state = {
     # anti-flicker for turns
     "turn_guard_ms": 150.0,
     "last_turn": {},
+    # snap-to-straight when both turn probs are low
+    "turn_release_thr": 0.36,
+    # quiet tracking + straight margin
+    "is_quiet": {},
+    "quiet_enter": {},
+    "straight_margin": 0.05,
     "windows": {},
     "latest": {},
     "recent": {},
@@ -323,7 +329,7 @@ def _ema_update(device_id: str, probs: np.ndarray) -> np.ndarray:
     alpha = float(state.get("ema_alpha", 0.6))
     prev = state["ema_probs"].get(device_id, None)
     out = probs if prev is None else (alpha * probs + (1.0 - alpha) * prev)
-    # NEW: renormalize to ensure sum=1 (prevents tiny confidences)
+    # renormalize to ensure sum=1 (prevents tiny confidences)
     s = float(np.sum(out))
     if s > 1e-9:
         out = out / s
@@ -337,21 +343,64 @@ def _debounced_command(
 ) -> str:
     g = arr_raw[:, :3]
     g_mag = float(np.sqrt((g**2).sum(axis=1)).mean())
+
+    # track continuous quiet period
+    is_q_prev = bool(state["is_quiet"].get(device_id, False))
     if g_mag < float(state["quiet_gyro"]):
-        state["last_quiet"][device_id] = now_ts
+        if not is_q_prev:
+            state["is_quiet"][device_id] = True
+            state["quiet_enter"][device_id] = now_ts
+    else:
+        state["is_quiet"][device_id] = False
+        state["quiet_enter"].pop(device_id, None)
 
     th_map = state["threshold_map"]
     th_def = float(th_map.get("default", state["threshold"]))
     th_straight = float(th_map.get("straight", th_def))
     th_label = float(th_map.get(label.lower(), th_def))
+    margin = float(state.get("straight_margin", 0.05))
 
-    # NEW: accept STRAIGHT immediately when confident (no quiet requirement)
+    # accept STRAIGHT immediately when confident (no quiet requirement)
     if label.lower() == "straight" and confidence >= th_straight:
         state["current_cmd"][device_id] = "STRAIGHT"
         state["hist"][device_id].clear()
         # clear last_turn marker
         state.get("last_turn", {}).pop(device_id, None)
         return "STRAIGHT"
+
+    # if quiet for >= quiet_ms, prefer STRAIGHT with small margin
+    probs_s = state["probs_s"].get(device_id, None)
+    if probs_s is not None:
+        classes = list(state["le"].classes_)
+        try:
+            si = classes.index("straight")
+            li = classes.index("left"); ri = classes.index("right")
+        except ValueError:
+            si = li = ri = None
+        if si is not None:
+            quiet_enter = state["quiet_enter"].get(device_id, None)
+            is_quiet = bool(state["is_quiet"].get(device_id, False))
+            quiet_for_ms = (now_ts - quiet_enter) * 1000.0 if (is_quiet and quiet_enter) else 0.0
+            pS = float(probs_s[si])
+            pL = float(probs_s[li]) if li is not None else 0.0
+            pR = float(probs_s[ri]) if ri is not None else 0.0
+
+            # if quiet long enough AND straight is close to (or above) the best
+            if quiet_for_ms >= float(state["quiet_ms"]) and (
+                pS >= th_straight or pS + margin >= max(pL, pR)
+            ):
+                state["current_cmd"][device_id] = "STRAIGHT"
+                state["hist"][device_id].clear()
+                state.get("last_turn", {}).pop(device_id, None)
+                return "STRAIGHT"
+
+            # snap to STRAIGHT when both turns are weak and instantaneous quiet
+            if (g_mag < float(state["quiet_gyro"])) and (li is not None and ri is not None):
+                if (pL < float(state["turn_release_thr"])) and (pR < float(state["turn_release_thr"])):
+                    state["current_cmd"][device_id] = "STRAIGHT"
+                    state["hist"][device_id].clear()
+                    state.get("last_turn", {}).pop(device_id, None)
+                    return "STRAIGHT"
 
     classes = list(state["le"].classes_)
     try:
@@ -394,7 +443,7 @@ def _debounced_command(
                 and last.get("dir") == opp
                 and (now_ts - float(last.get("ts", 0.0))) * 1000.0 < guard_ms
             ):
-                pass
+                pass # block opposite flicker briefly
             else:
                 state["current_cmd"][device_id] = label.upper()
                 state["hist"][device_id].clear()
@@ -442,7 +491,7 @@ def _append_log_row(
         "command": command,
         "confidence": confidence,
     }
-    # NEW: log prob_sum to verify normalization
+    # log prob_sum to verify normalization
     row["prob_sum"] = float(sum(probs.values()))
     for c in state["le"].classes_:
         row[f"prob_{c}"] = float(probs.get(c, 0.0))
@@ -788,9 +837,6 @@ def auto_yaw(device_id: str = "imu01"):
     }
 
 
-# ...existing code...
-
-
 @app.get("/", response_class=HTMLResponse)
 def index():
     html = """
@@ -987,6 +1033,9 @@ if __name__ == "__main__":
     ap.add_argument("--acc_bias_alpha", type=float, default=0.01)
     ap.add_argument("--speed_floor", type=float, default=0.0)
     ap.add_argument("--auto_calib", type=int, default=0)
+    ap.add_argument("--turn_guard_ms", type=int, default=220)          # default stronger guard
+    ap.add_argument("--turn_release_thr", type=float, default=0.36)     # release to straight when both L/R < this
+    ap.add_argument("--straight_margin", type=float, default=0.05)
     args = ap.parse_args()
 
     state["debounce_k"] = max(1, int(args.debounce))
@@ -1027,24 +1076,12 @@ if __name__ == "__main__":
     state["acc_bias_alpha"] = float(args.acc_bias_alpha)
     state["speed_floor"] = float(args.speed_floor)
     state["auto_calib"] = int(args.auto_calib)
+    state["turn_guard_ms"] = int(args.turn_guard_ms)
+    state["turn_release_thr"] = float(args.turn_release_thr)
+    state["straight_margin"] = float(args.straight_margin)
 
     init_model(
         Path(args.artifacts), threshold=args.threshold, window_override=args.window
     )
     print(f"[INFO] ready. /ingest /latest /control | win={state['eff_window']}")
     uvicorn.run(app, host=args.host, port=args.http_port)
-
-    url = "http://10.81.21.177:5000/calibrate_gravity"
-    myobj = {"device_id": "imu01"}
-
-    x = requests.post(url, json=myobj)
-
-    print(x.text)
-
-    time.sleep(2)
-
-    url = "http://10.81.21.177:5000/auto_yaw"
-
-    x = requests.post(url, json=myobj)
-
-    print(x.text)

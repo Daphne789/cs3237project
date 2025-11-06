@@ -7,3 +7,6 @@ pyserial
 torch>=2.0.0
 tqdm
 pyyaml
+uvicorn
+fastapi
+nest-asyncio
