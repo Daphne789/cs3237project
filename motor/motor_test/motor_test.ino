@@ -3,6 +3,9 @@
 // C -> Front Right
 // D -> Front Left
 
+#include <WiFi.h>
+#include <HTTPClient.h>
+
 //motor A connected between A01 and A02
 //motor B connected between B01 and B02
 int STBY1 = 26; //standby
@@ -24,15 +27,42 @@ int PWMD = 15;
 int DIN1 = 0;
 int DIN2 = 2;
 
+//RED LED
+int RED_LED = 25;
+
+String currentCommand = "0";
+int motorSpeed = 255;
+
+#define STOP "0"
+#define FORWARD "1"
+#define BACKWARD "2"
+#define TURN_LEFT "3"
+#define TURN_RIGHT "4"
+#define SIDE_LEFT "5"
+#define SIDE_RIGHT "6"
+#define FULL_TURN "7"
+
+#define TIME 1000
+#define ROTATE_TIME 1350
+
 void moveForward(int moveTime);
 void moveBackward(int moveTime);
 void moveSideLeft(int moveTime);
 void moveSideRight(int moveTime);
+void moveTurnLeft(int moveTime);
+void moveTurnRight(int moveTime);
 void moveRotate(int moveTime);
 void testMapping();
 void offAllMotor();
 
+// http
+const char* ssid = "Galaxy A53 5G225D";
+const char* password = "sdci3924";
+const char* serverName = "http://10.81.21.177:5000/control";
+
 void setup() {
+    Serial.begin(115200);
+
     pinMode(STBY1, OUTPUT);
     pinMode(STBY2, OUTPUT);
     pinMode(PWMA, OUTPUT);
@@ -47,27 +77,101 @@ void setup() {
     pinMode(PWMD, OUTPUT);
     pinMode(DIN1, OUTPUT);
     pinMode(DIN2, OUTPUT);
+    pinMode(RED_LED, OUTPUT);
+
+    // WiFi
+    WiFi.begin(ssid, password);
+    Serial.print("Connecting to WiFi");
+  
+    while (WiFi.status() != WL_CONNECTED) {
+        delay(500);
+        Serial.print(".");
+    }
+
+    Serial.println();
+    Serial.println("Connected to WiFi");
+    Serial.print("IP Address: ");
+    Serial.println(WiFi.localIP());
+
+    //set motor A and motor B speed, 0-255 255 being the fastest
+    analogWrite(PWMA, motorSpeed);
+    analogWrite(PWMB, motorSpeed);
+    analogWrite(PWMC, motorSpeed);
+    analogWrite(PWMD, motorSpeed);
 }
 
 void loop() {
-    //set motor A and motor B speed, 0-255 255 being the fastest
-    analogWrite(PWMA,255);
-    analogWrite(PWMB,255); //B is half speed
-    analogWrite(PWMC,255);
-    analogWrite(PWMD,255); //B is half speed
+    // HTTP
+    if (WiFi.status() == WL_CONNECTED) {
+        HTTPClient http;
 
-    moveRotate(5000);
+        http.begin(serverName);
+        int httpResponseCode = http.GET();
+        
+        if (httpResponseCode > 0) {
+            Serial.print("HTTP Response code: ");
+            Serial.println(httpResponseCode);
+            
+            // Get the response payload
+            String command = http.getString();
+            if (command != currentCommand) {
+                currentCommand = command;
+                Serial.print("New command: ");
+                Serial.println(currentCommand);
+            }
+        }
+        else {
+            Serial.print("Error code: ");
+            Serial.println(httpResponseCode);
+            offAllMotor();
+            digitalWrite(STBY1,LOW);
+            digitalWrite(STBY2,LOW);
+        }
 
-    delay(2000);
-
-    // moveSideRight(5000);
-
-    // delay(2000);
-
-    // for(;;);
-
+        http.end();
+    } else {
+        Serial.println("WiFi Disconnected");
+    }
     // testMapping();
-    // delay(1000); //the two motors will stop spinning for 1 second
+
+    executeCommand(currentCommand);
+    delay(1000);
+}
+
+void executeCommand(String command) {
+    if (command == FORWARD) {
+        moveForward(TIME);
+    }
+    else if (command == BACKWARD) {
+        moveBackward(TIME);
+    }
+    else if (command = TURN_LEFT) {
+        moveTurnLeft(ROTATE_TIME);
+    } 
+    else if (command = TURN_RIGHT) {
+        moveTurnRight(ROTATE_TIME);
+    }
+    else if (command == SIDE_LEFT) {
+        moveSideLeft(TIME);
+    }
+    else if (command == SIDE_RIGHT) {
+        moveSideRight(TIME);
+    } 
+    else if (command == FULL_TURN) {
+        moveRotate(ROTATE_TIME);
+    }
+    else if (command == STOP || command == "") {
+        offAllMotor();
+        for (int i = 0; i < 10; i += 1) {
+            digitalWrite(RED_LED, HIGH);
+            delay(1000);
+            digitalWrite(RED_LED, LOW);
+            delay(1000);
+        }        
+    }
+    else {
+        Serial.println("Unknown command");
+    }
 }
 
 void moveForward(int moveTime) {
@@ -112,7 +216,7 @@ void moveBackward(int moveTime) {
     digitalWrite(STBY2,LOW);
 }
 
-// not done
+
 void moveSideLeft(int moveTime) {
     //disable standby to make the motors run
     digitalWrite(STBY1,HIGH);
@@ -155,7 +259,7 @@ void moveSideRight(int moveTime) {
     digitalWrite(STBY2,LOW);
 }
 
-void moveRotate(int moveTime) {
+void moveTurnLeft(int moveTime) {
     //disable standby to make the motors run
     digitalWrite(STBY1,HIGH);
     digitalWrite(STBY2,HIGH);
@@ -170,6 +274,48 @@ void moveRotate(int moveTime) {
     digitalWrite(DIN2,HIGH);
 
     delay(moveTime);
+
+    //enable standby to make the motors stop spinning
+    digitalWrite(STBY1,LOW);
+    digitalWrite(STBY2,LOW);
+}
+
+void moveTurnRight(int moveTime) {
+    //disable standby to make the motors run
+    digitalWrite(STBY1,HIGH);
+    digitalWrite(STBY2,HIGH);
+
+    digitalWrite(AIN1,HIGH);
+    digitalWrite(AIN2,LOW);
+    digitalWrite(BIN1,LOW);
+    digitalWrite(BIN2,HIGH);
+    digitalWrite(CIN1,LOW);
+    digitalWrite(CIN2,HIGH);
+    digitalWrite(DIN1,HIGH);
+    digitalWrite(DIN2,LOW);
+
+    delay(moveTime);
+
+    //enable standby to make the motors stop spinning
+    digitalWrite(STBY1,LOW);
+    digitalWrite(STBY2,LOW);
+}
+
+void moveRotate(int moveTime) {
+    //disable standby to make the motors run
+    digitalWrite(STBY1,HIGH);
+    digitalWrite(STBY2,HIGH);
+
+    digitalWrite(AIN1,LOW);
+    digitalWrite(AIN2,HIGH);
+    digitalWrite(BIN1,HIGH);
+    digitalWrite(BIN2,LOW);
+    digitalWrite(CIN1,HIGH);
+    digitalWrite(CIN2,LOW);
+    digitalWrite(DIN1,LOW);
+    digitalWrite(DIN2,HIGH);
+
+    delay(4*moveTime);
 
     //enable standby to make the motors stop spinning
     digitalWrite(STBY1,LOW);
