@@ -1,9 +1,3 @@
-// void setup() {
-//   Serial.begin(115200);
-//   Serial.println("Hello, ESP32");
-// }
-// void loop() {}
-
 // A -> Back Left
 // B -> Back Right
 // C -> Front Right
@@ -39,10 +33,15 @@ int RED_LED = 25;
 String currentCommand = "0";
 int motorSpeed = 255;
 
+#define STOP "0"
 #define FORWARD "1"
 #define BACKWARD "2"
-#define LEFT "3"
-#define RIGHT "4"
+#define TURN_LEFT "3"
+#define TURN_RIGHT "4"
+#define SIDE_LEFT "5"
+#define SIDE_RIGHT "6"
+#define FULL_TURN "7"
+
 #define TIME 1000
 #define ROTATE_TIME 1350
 
@@ -50,6 +49,8 @@ void moveForward(int moveTime);
 void moveBackward(int moveTime);
 void moveSideLeft(int moveTime);
 void moveSideRight(int moveTime);
+void moveTurnLeft(int moveTime);
+void moveTurnRight(int moveTime);
 void moveRotate(int moveTime);
 void testMapping();
 void offAllMotor();
@@ -138,19 +139,28 @@ void loop() {
 }
 
 void executeCommand(String command) {
-    if (command == "1") {
+    if (command == FORWARD) {
         moveForward(TIME);
     }
-    else if (command == "2") {
+    else if (command == BACKWARD) {
         moveBackward(TIME);
     }
-    else if (command == "3") {
+    else if (command = TURN_LEFT) {
+        moveTurnLeft(ROTATE_TIME);
+    } 
+    else if (command = TURN_RIGHT) {
+        moveTurnRight(ROTATE_TIME);
+    }
+    else if (command == SIDE_LEFT) {
         moveSideLeft(TIME);
     }
-    else if (command == "4") {
+    else if (command == SIDE_RIGHT) {
         moveSideRight(TIME);
+    } 
+    else if (command == FULL_TURN) {
+        moveRotate(ROTATE_TIME);
     }
-    else if (command == "0" || command == "") {
+    else if (command == STOP || command == "") {
         offAllMotor();
         for (int i = 0; i < 10; i += 1) {
             digitalWrite(RED_LED, HIGH);
@@ -178,11 +188,11 @@ void moveForward(int moveTime) {
     digitalWrite(DIN1,HIGH);
     digitalWrite(DIN2,LOW);
 
-    // delay(moveTime);
+    delay(moveTime);
 
-    // //enable standby to make the motors stop spinning
-    // digitalWrite(STBY1,LOW);
-    // digitalWrite(STBY2,LOW);
+    //enable standby to make the motors stop spinning
+    digitalWrite(STBY1,LOW);
+    digitalWrite(STBY2,LOW);
 }
 
 void moveBackward(int moveTime) {
@@ -199,11 +209,11 @@ void moveBackward(int moveTime) {
     digitalWrite(DIN1,LOW);
     digitalWrite(DIN2,HIGH);
 
-    // delay(moveTime);
+    delay(moveTime);
 
-    // //enable standby to make the motors stop spinning
-    // digitalWrite(STBY1,LOW);
-    // digitalWrite(STBY2,LOW);
+    //enable standby to make the motors stop spinning
+    digitalWrite(STBY1,LOW);
+    digitalWrite(STBY2,LOW);
 }
 
 
@@ -221,11 +231,11 @@ void moveSideLeft(int moveTime) {
     digitalWrite(DIN1,LOW);
     digitalWrite(DIN2,HIGH);
 
-    // delay(moveTime);
+    delay(moveTime);
 
-    // //enable standby to make the motors stop spinning
-    // digitalWrite(STBY1,LOW);
-    // digitalWrite(STBY2,LOW);
+    //enable standby to make the motors stop spinning
+    digitalWrite(STBY1,LOW);
+    digitalWrite(STBY2,LOW);
 }
 
 void moveSideRight(int moveTime) {
@@ -242,11 +252,53 @@ void moveSideRight(int moveTime) {
     digitalWrite(DIN1,HIGH);
     digitalWrite(DIN2,LOW);
 
-    // delay(moveTime);
+    delay(moveTime);
 
-    // //enable standby to make the motors stop spinning
-    // digitalWrite(STBY1,LOW);
-    // digitalWrite(STBY2,LOW);
+    //enable standby to make the motors stop spinning
+    digitalWrite(STBY1,LOW);
+    digitalWrite(STBY2,LOW);
+}
+
+void moveTurnLeft(int moveTime) {
+    //disable standby to make the motors run
+    digitalWrite(STBY1,HIGH);
+    digitalWrite(STBY2,HIGH);
+
+    digitalWrite(AIN1,LOW);
+    digitalWrite(AIN2,HIGH);
+    digitalWrite(BIN1,HIGH);
+    digitalWrite(BIN2,LOW);
+    digitalWrite(CIN1,HIGH);
+    digitalWrite(CIN2,LOW);
+    digitalWrite(DIN1,LOW);
+    digitalWrite(DIN2,HIGH);
+
+    delay(moveTime);
+
+    //enable standby to make the motors stop spinning
+    digitalWrite(STBY1,LOW);
+    digitalWrite(STBY2,LOW);
+}
+
+void moveTurnRight(int moveTime) {
+    //disable standby to make the motors run
+    digitalWrite(STBY1,HIGH);
+    digitalWrite(STBY2,HIGH);
+
+    digitalWrite(AIN1,HIGH);
+    digitalWrite(AIN2,LOW);
+    digitalWrite(BIN1,LOW);
+    digitalWrite(BIN2,HIGH);
+    digitalWrite(CIN1,LOW);
+    digitalWrite(CIN2,HIGH);
+    digitalWrite(DIN1,HIGH);
+    digitalWrite(DIN2,LOW);
+
+    delay(moveTime);
+
+    //enable standby to make the motors stop spinning
+    digitalWrite(STBY1,LOW);
+    digitalWrite(STBY2,LOW);
 }
 
 void moveRotate(int moveTime) {
@@ -263,11 +315,11 @@ void moveRotate(int moveTime) {
     digitalWrite(DIN1,LOW);
     digitalWrite(DIN2,HIGH);
 
-    // delay(moveTime);
+    delay(4*moveTime);
 
-    // //enable standby to make the motors stop spinning
-    // digitalWrite(STBY1,LOW);
-    // digitalWrite(STBY2,LOW);
+    //enable standby to make the motors stop spinning
+    digitalWrite(STBY1,LOW);
+    digitalWrite(STBY2,LOW);
 }
 
 void offAllMotor() {
