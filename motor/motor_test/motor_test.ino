@@ -1,3 +1,9 @@
+// void setup() {
+//   Serial.begin(115200);
+//   Serial.println("Hello, ESP32");
+// }
+// void loop() {}
+
 // A -> Back Left
 // B -> Back Right
 // C -> Front Right
@@ -27,6 +33,9 @@ int PWMD = 15;
 int DIN1 = 0;
 int DIN2 = 2;
 
+//RED LED
+int RED_LED = 25;
+
 String currentCommand = "0";
 int motorSpeed = 255;
 
@@ -45,9 +54,9 @@ void testMapping();
 void offAllMotor();
 
 // http
-const char* ssid = "";
-const char* password = "";
-const char* serverName = "";
+const char* ssid = "Galaxy A53 5G225D";
+const char* password = "sdci3924";
+const char* serverName = "http://10.81.21.177:5000/control";
 
 void setup() {
     Serial.begin(115200);
@@ -66,6 +75,7 @@ void setup() {
     pinMode(PWMD, OUTPUT);
     pinMode(DIN1, OUTPUT);
     pinMode(DIN2, OUTPUT);
+    pinMode(RED_LED, OUTPUT);
 
     // WiFi
     WiFi.begin(ssid, password);
@@ -141,6 +151,12 @@ void executeCommand(String command) {
     }
     else if (command == "0" || command == "") {
         offAllMotor();
+        for (int i = 0; i < 10; i += 1) {
+            digitalWrite(RED_LED, HIGH);
+            delay(1000);
+            digitalWrite(RED_LED, LOW);
+            delay(1000);
+        }        
     }
     else {
         Serial.println("Unknown command");
