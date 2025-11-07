@@ -39,11 +39,12 @@ int RED_LED = 25;
 String currentCommand = "0";
 int motorSpeed = 255;
 
-#define FORWARD 1
-#define BACKWARD 2
-#define LEFT 3
-#define RIGHT 4
+#define FORWARD "1"
+#define BACKWARD "2"
+#define LEFT "3"
+#define RIGHT "4"
 #define TIME 1000
+#define ROTATE_TIME 1350
 
 void moveForward(int moveTime);
 void moveBackward(int moveTime);
