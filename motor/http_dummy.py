@@ -5,7 +5,13 @@ app = Flask(__name__)
 
 @app.route('/')
 def command():
-    value = random.randint(0, 4)
+    # value = 1
+    # print(f"Sent command: {value}")
+    # return str(value)
+    # for i in range(0,8):
+    #     print(f"Sent command: {i}")
+    #     return str(i)
+    value = random.randint(0, 7)
     print(f"Sent command: {value}")
     return str(value)
 
