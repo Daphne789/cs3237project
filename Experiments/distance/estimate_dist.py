@@ -46,6 +46,8 @@ def calc_dist(corners):
     forward_distance = tvec[2]  # distance along camera Z-axis
     euclidean_distance = np.linalg.norm(tvec)  # full 3D distance
 
-    print("tvec (m):", tvec)
-    print("forward distance (m):", forward_distance)
-    print("euclidean distance (m):", euclidean_distance)
+    # print("tvec (m):", tvec)
+    # print("forward distance (m):", forward_distance)
+    # print("euclidean distance (m):", euclidean_distance)
+
+    return forward_distance
