@@ -5,6 +5,9 @@
 
 #include <WiFi.h>
 #include <HTTPClient.h>
+#include <esp_sleep.h>
+
+#define BUTTON_PIN GPIO_NUM_33  
 
 //motor A connected between A01 and A02
 //motor B connected between B01 and B02
@@ -56,9 +59,12 @@ void testMapping();
 void offAllMotor();
 
 // http
-const char* ssid = "Galaxy A53 5G225D";
-const char* password = "sdci3924";
-const char* serverName = "http://10.81.21.177:5000/control";
+// const char* ssid = "Galaxy A53 5G225D";
+// const char* password = "sdci3924";
+// const char* serverName = "http://10.81.21.177:5000/control";
+const char* ssid = "aaaaaaaa";
+const char* password = "88888888";
+const char* serverName = "http://10.235.243.246:5000/";
 
 void setup() {
     Serial.begin(115200);
@@ -78,6 +84,17 @@ void setup() {
     pinMode(DIN1, OUTPUT);
     pinMode(DIN2, OUTPUT);
     pinMode(RED_LED, OUTPUT);
+    pinMode(BUTTON_PIN, INPUT_PULLUP);
+
+    esp_sleep_wakeup_cause_t wakeup_reason = esp_sleep_get_wakeup_cause();
+
+    if (wakeup_reason == ESP_SLEEP_WAKEUP_EXT0) {
+        Serial.println("Woken up by button press");
+    } else {
+        Serial.println("Normal startup or reset");
+    }
+
+    esp_sleep_enable_ext0_wakeup(BUTTON_PIN, 0);
 
     // WiFi
     WiFi.begin(ssid, password);
@@ -101,6 +118,8 @@ void setup() {
 }
 
 void loop() {
+    currentTime = millis();
+
     // HTTP
     if (WiFi.status() == WL_CONNECTED) {
         HTTPClient http;
@@ -109,8 +128,8 @@ void loop() {
         int httpResponseCode = http.GET();
         
         if (httpResponseCode > 0) {
-            Serial.print("HTTP Response code: ");
-            Serial.println(httpResponseCode);
+            // Serial.print("HTTP Response code: ");
+            // Serial.println(httpResponseCode);
             
             // Get the response payload
             String command = http.getString();
@@ -122,10 +141,8 @@ void loop() {
         }
         else {
             Serial.print("Error code: ");
+            currentCommand = "0";
             Serial.println(httpResponseCode);
-            offAllMotor();
-            digitalWrite(STBY1,LOW);
-            digitalWrite(STBY2,LOW);
         }
 
         http.end();
@@ -133,7 +150,14 @@ void loop() {
         Serial.println("WiFi Disconnected");
     }
     // testMapping();
-
+    
+    if (currentTime - lastButtonPressed >= 150 && digitalRead(BUTTON_PIN) == LOW) {
+        Serial.println("Button pressed - entering deep sleep");
+        delay(100);  
+      
+        esp_deep_sleep_start(); 
+    }
+    
     executeCommand(currentCommand);
     delay(1000);
 }
@@ -141,24 +165,31 @@ void loop() {
 void executeCommand(String command) {
     if (command == FORWARD) {
         moveForward(TIME);
+        Serial.println("forward");
     }
     else if (command == BACKWARD) {
         moveBackward(TIME);
+        Serial.println("backward");
     }
-    else if (command = TURN_LEFT) {
+    else if (command == TURN_LEFT) {
         moveTurnLeft(ROTATE_TIME);
+        Serial.println("rotate left");
     } 
-    else if (command = TURN_RIGHT) {
+    else if (command == TURN_RIGHT) {
         moveTurnRight(ROTATE_TIME);
+        Serial.println("rotate right");
     }
     else if (command == SIDE_LEFT) {
         moveSideLeft(TIME);
+        Serial.println("side left");
     }
     else if (command == SIDE_RIGHT) {
         moveSideRight(TIME);
+        Serial.println("side right");
     } 
     else if (command == FULL_TURN) {
         moveRotate(ROTATE_TIME);
+        Serial.println("full rotate");
     }
     else if (command == STOP || command == "") {
         offAllMotor();
