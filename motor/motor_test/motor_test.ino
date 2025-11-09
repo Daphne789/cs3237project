@@ -5,6 +5,9 @@
 
 #include <WiFi.h>
 #include <HTTPClient.h>
+#include <esp_sleep.h>
+
+#define BUTTON_PIN GPIO_NUM_33  
 
 //motor A connected between A01 and A02
 //motor B connected between B01 and B02
@@ -81,6 +84,17 @@ void setup() {
     pinMode(DIN1, OUTPUT);
     pinMode(DIN2, OUTPUT);
     pinMode(RED_LED, OUTPUT);
+    pinMode(BUTTON_PIN, INPUT_PULLUP);
+
+    esp_sleep_wakeup_cause_t wakeup_reason = esp_sleep_get_wakeup_cause();
+
+    if (wakeup_reason == ESP_SLEEP_WAKEUP_EXT0) {
+        Serial.println("Woken up by button press");
+    } else {
+        Serial.println("Normal startup or reset");
+    }
+
+    esp_sleep_enable_ext0_wakeup(BUTTON_PIN, 0);
 
     // WiFi
     WiFi.begin(ssid, password);
@@ -104,6 +118,8 @@ void setup() {
 }
 
 void loop() {
+    currentTime = millis();
+
     // HTTP
     if (WiFi.status() == WL_CONNECTED) {
         HTTPClient http;
@@ -134,7 +150,14 @@ void loop() {
         Serial.println("WiFi Disconnected");
     }
     // testMapping();
-
+    
+    if (currentTime - lastButtonPressed >= 150 && digitalRead(BUTTON_PIN) == LOW) {
+        Serial.println("Button pressed - entering deep sleep");
+        delay(100);  
+      
+        esp_deep_sleep_start(); 
+    }
+    
     executeCommand(currentCommand);
     delay(1000);
 }
