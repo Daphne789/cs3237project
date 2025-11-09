@@ -8,6 +8,9 @@
 #include <esp_sleep.h>
 
 #define BUTTON_PIN GPIO_NUM_33  
+RTC_DATA_ATTR int lastButtonPressed = 0;
+RTC_DATA_ATTR int currentTime = 0;
+volatile bool buttonPressedFlag = false;
 
 //motor A connected between A01 and A02
 //motor B connected between B01 and B02
@@ -32,6 +35,9 @@ int DIN2 = 2;
 
 //RED LED
 int RED_LED = 25;
+
+//WIFI LED
+int WIFI_LED = 32;
 
 String currentCommand = "0";
 int motorSpeed = 255;
@@ -66,6 +72,10 @@ const char* ssid = "aaaaaaaa";
 const char* password = "88888888";
 const char* serverName = "http://10.235.243.246:5000/";
 
+void IRAM_ATTR isr() {
+    buttonPressedFlag = true;
+}
+
 void setup() {
     Serial.begin(115200);
 
@@ -85,16 +95,29 @@ void setup() {
     pinMode(DIN2, OUTPUT);
     pinMode(RED_LED, OUTPUT);
     pinMode(BUTTON_PIN, INPUT_PULLUP);
+    pinMode(WIFI_LED, OUTPUT);
+
+    digitalWrite(WIFI_LED, LOW);
 
     esp_sleep_wakeup_cause_t wakeup_reason = esp_sleep_get_wakeup_cause();
 
     if (wakeup_reason == ESP_SLEEP_WAKEUP_EXT0) {
         Serial.println("Woken up by button press");
+    
+        // wait for button release
+        while(digitalRead(BUTTON_PIN) == LOW) {
+            delay(10);
+        }
+        delay(100); // Extra debounce
     } else {
         Serial.println("Normal startup or reset");
     }
 
     esp_sleep_enable_ext0_wakeup(BUTTON_PIN, 0);
+
+    // Attach interrupt for during operation
+    attachInterrupt(BUTTON_PIN, isr, FALLING);
+    lastButtonPressed = millis();
 
     // WiFi
     WiFi.begin(ssid, password);
@@ -109,6 +132,7 @@ void setup() {
     Serial.println("Connected to WiFi");
     Serial.print("IP Address: ");
     Serial.println(WiFi.localIP());
+    digitalWrite(WIFI_LED, HIGH);
 
     //set motor A and motor B speed, 0-255 255 being the fastest
     analogWrite(PWMA, motorSpeed);
@@ -122,6 +146,7 @@ void loop() {
 
     // HTTP
     if (WiFi.status() == WL_CONNECTED) {
+        digitalWrite(WIFI_LED, HIGH);
         HTTPClient http;
 
         http.begin(serverName);
@@ -148,18 +173,34 @@ void loop() {
         http.end();
     } else {
         Serial.println("WiFi Disconnected");
+        digitalWrite(WIFI_LED, LOW);
     }
     // testMapping();
-    
-    if (currentTime - lastButtonPressed >= 150 && digitalRead(BUTTON_PIN) == LOW) {
-        Serial.println("Button pressed - entering deep sleep");
-        delay(100);  
-      
-        esp_deep_sleep_start(); 
+
+    // Check for deep sleep request
+    if (buttonPressedFlag) {
+        buttonPressedFlag = false;
+        
+        if (currentTime - lastButtonPressed >= 150) {
+            // Wait for button release before sleeping
+            while(digitalRead(BUTTON_PIN) == LOW) {
+                delay(10);
+            }
+            
+            Serial.println("Button pressed - entering deep sleep");
+            Serial.flush();
+            delay(100);
+            
+            // Detach interrupt before sleep
+            detachInterrupt(BUTTON_PIN);
+            
+            esp_deep_sleep_start();
+        }
+        lastButtonPressed = currentTime;
     }
-    
+
     executeCommand(currentCommand);
-    delay(1000);
+    delay(50);
 }
 
 void executeCommand(String command) {
@@ -193,12 +234,11 @@ void executeCommand(String command) {
     }
     else if (command == STOP || command == "") {
         offAllMotor();
-        for (int i = 0; i < 10; i += 1) {
-            digitalWrite(RED_LED, HIGH);
-            delay(1000);
-            digitalWrite(RED_LED, LOW);
-            delay(1000);
-        }        
+        Serial.println("stop");
+        digitalWrite(RED_LED, HIGH);
+        delay(500);
+        digitalWrite(RED_LED, LOW);
+        delay(500);      
     }
     else {
         Serial.println("Unknown command");

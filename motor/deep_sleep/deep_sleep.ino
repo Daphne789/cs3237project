@@ -20,6 +20,7 @@ void setup() {
     Serial.println("Normal startup or reset");
   }
   
+  lastButtonPressed = millis(); // Initialize the debounce timer
   esp_sleep_enable_ext0_wakeup(BUTTON_PIN, 0);
 }
 
