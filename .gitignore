@@ -1,4 +1,7 @@
 Experiments/apriltag_detection/__pycache__
 venv/
 captured_frames/
+captured_frames_2/
 captured_frames_old/
+Experiments/distance/__pycache__/
+__pycache__/

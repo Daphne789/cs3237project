@@ -4,15 +4,31 @@ import numpy as np
 from tensorflow.keras.models import load_model
 from distance.estimate_dist import calc_dist
 import time 
+from scipy import stats
+from PIL import Image
+
+OG_W, OG_H = 240, 240
+IMG_W, IMG_H = 64, 64
+
+def preprocess_image(img):
+    # img = cv2.imread(img_filepath, cv2.IMREAD_GRAYSCALE)
+    #gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+    img_resized = cv2.resize(img, (IMG_W, IMG_H))
+    img_resized = img_resized.astype(np.float32) / 255.0
+    img_input = np.expand_dims(img_resized, (0, -1))
+    return img_input # (1, 64, 64, 1)
 
 url = "http://192.168.4.1:81/stream"
 stream = requests.get(url, stream=True)
-model = load_model("apriltag_regressor_finetuned.keras")
-
-OG_W, OG_H = 320, 240
-IMG_W, IMG_H = 64, 64
+corners_model = load_model("apriltag_regressor_finetuned.keras")
+is_present_model = load_model("apriltag_binary_classifier.keras")
+# img_input = preprocess_image(input("Input img filepath: "))
+# print(corners_model.predict(img_input))
 
 bytes_data = b''
+
+last_check_time = time.time()
+detections_in_window = []
 
 for chunk in stream.iter_content(chunk_size=1024):
     bytes_data += chunk
@@ -22,31 +38,33 @@ for chunk in stream.iter_content(chunk_size=1024):
     if a != -1 and b != -1 and a < b:
         jpg = bytes_data[a:b+2]
         bytes_data = bytes_data[b+2:]
-        img = cv2.imdecode(np.frombuffer(jpg, dtype=np.uint8), cv2.IMREAD_COLOR)
+        img = cv2.imdecode(np.frombuffer(jpg, dtype=np.uint8), cv2.IMREAD_GRAYSCALE)
 
         if img is not None:
             cv2.imshow('ESP32 Stream', img)
 
-            # --- Convert to grayscale and preprocess ---
-            gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
-            gray_resized = cv2.resize(gray, (IMG_W, IMG_H))
-            gray_resized = gray_resized.astype(np.float32) / 255.0
-            img_input = np.expand_dims(gray_resized, (0, -1))  # (1, 64, 64, 1)
+            img_input = preprocess_image(img)
+            
+            corner_pred = corners_model.predict(img_input, verbose=0)[0]
 
-            # --- Predict corners ---
-            corner_pred = model.predict(img_input, verbose=0)[0]
-
-            # --- Denormalise to original resolution ---
             pred_corners_px = corner_pred.copy()
             pred_corners_px[0::2] *= OG_W
             pred_corners_px[1::2] *= OG_H
             corners = pred_corners_px.reshape(4, 2)
 
-            print("Predicted corners (px):", corners)
-
             forward_distance = calc_dist(corners)
-            print("Estimated distance:", forward_distance)
-            #time.sleep(0.1)
+            detections_in_window.append(forward_distance)
+            
+            curr_time = time.time()
+            if curr_time - last_check_time >= 1.0:
+                # print("detections_in_window", detections_in_window)
+                avg_pred = np.mean(detections_in_window)
+                avg_pred_scipy = stats.trim_mean(detections_in_window, proportiontocut=0.2)
+                print("AVG PRED:", avg_pred)
+                print("trimmed mean:", avg_pred_scipy)
+
+                detections_in_window.clear()
+                last_check_time = curr_time
 
         if cv2.waitKey(1) == 27:
             break
