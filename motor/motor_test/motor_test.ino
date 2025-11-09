@@ -36,6 +36,9 @@ int DIN2 = 2;
 //RED LED
 int RED_LED = 25;
 
+//WIFI LED
+int WIFI_LED = 32;
+
 String currentCommand = "0";
 int motorSpeed = 255;
 
@@ -92,6 +95,9 @@ void setup() {
     pinMode(DIN2, OUTPUT);
     pinMode(RED_LED, OUTPUT);
     pinMode(BUTTON_PIN, INPUT_PULLUP);
+    pinMode(WIFI_LED, OUTPUT);
+
+    digitalWrite(WIFI_LED, LOW);
 
     esp_sleep_wakeup_cause_t wakeup_reason = esp_sleep_get_wakeup_cause();
 
@@ -126,6 +132,7 @@ void setup() {
     Serial.println("Connected to WiFi");
     Serial.print("IP Address: ");
     Serial.println(WiFi.localIP());
+    digitalWrite(WIFI_LED, HIGH);
 
     //set motor A and motor B speed, 0-255 255 being the fastest
     analogWrite(PWMA, motorSpeed);
@@ -139,6 +146,7 @@ void loop() {
 
     // HTTP
     if (WiFi.status() == WL_CONNECTED) {
+        digitalWrite(WIFI_LED, HIGH);
         HTTPClient http;
 
         http.begin(serverName);
@@ -165,6 +173,7 @@ void loop() {
         http.end();
     } else {
         Serial.println("WiFi Disconnected");
+        digitalWrite(WIFI_LED, LOW);
     }
     // testMapping();
 
