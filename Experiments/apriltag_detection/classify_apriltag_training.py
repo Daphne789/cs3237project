@@ -77,4 +77,4 @@ plt.show()
 
 print(f"Test accuracy: {test_acc:.3f}")
 
-model_cls.save("apriltag_classifier.keras")
+model_cls.save("apriltag_binary_classifier.keras")
