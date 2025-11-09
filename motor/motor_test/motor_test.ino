@@ -56,9 +56,12 @@ void testMapping();
 void offAllMotor();
 
 // http
-const char* ssid = "Galaxy A53 5G225D";
-const char* password = "sdci3924";
-const char* serverName = "http://10.81.21.177:5000/control";
+// const char* ssid = "Galaxy A53 5G225D";
+// const char* password = "sdci3924";
+// const char* serverName = "http://10.81.21.177:5000/control";
+const char* ssid = "aaaaaaaa";
+const char* password = "88888888";
+const char* serverName = "http://10.235.243.246:5000/";
 
 void setup() {
     Serial.begin(115200);
@@ -109,8 +112,8 @@ void loop() {
         int httpResponseCode = http.GET();
         
         if (httpResponseCode > 0) {
-            Serial.print("HTTP Response code: ");
-            Serial.println(httpResponseCode);
+            // Serial.print("HTTP Response code: ");
+            // Serial.println(httpResponseCode);
             
             // Get the response payload
             String command = http.getString();
@@ -122,10 +125,8 @@ void loop() {
         }
         else {
             Serial.print("Error code: ");
+            currentCommand = "0";
             Serial.println(httpResponseCode);
-            offAllMotor();
-            digitalWrite(STBY1,LOW);
-            digitalWrite(STBY2,LOW);
         }
 
         http.end();
@@ -141,24 +142,31 @@ void loop() {
 void executeCommand(String command) {
     if (command == FORWARD) {
         moveForward(TIME);
+        Serial.println("forward");
     }
     else if (command == BACKWARD) {
         moveBackward(TIME);
+        Serial.println("backward");
     }
-    else if (command = TURN_LEFT) {
+    else if (command == TURN_LEFT) {
         moveTurnLeft(ROTATE_TIME);
+        Serial.println("rotate left");
     } 
-    else if (command = TURN_RIGHT) {
+    else if (command == TURN_RIGHT) {
         moveTurnRight(ROTATE_TIME);
+        Serial.println("rotate right");
     }
     else if (command == SIDE_LEFT) {
         moveSideLeft(TIME);
+        Serial.println("side left");
     }
     else if (command == SIDE_RIGHT) {
         moveSideRight(TIME);
+        Serial.println("side right");
     } 
     else if (command == FULL_TURN) {
         moveRotate(ROTATE_TIME);
+        Serial.println("full rotate");
     }
     else if (command == STOP || command == "") {
         offAllMotor();
