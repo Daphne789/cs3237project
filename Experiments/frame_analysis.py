@@ -3,9 +3,8 @@ import requests
 import numpy as np
 from tensorflow.keras.models import load_model
 from distance.estimate_dist import calc_dist
+from apriltag_detection.basic_apriltag_roi_detection import is_apriltag_present, compute_corners_from_img
 import time 
-from scipy import stats
-from PIL import Image
 
 def preprocess_image(img):
     IMG_W, IMG_H = 64, 64
@@ -48,20 +47,30 @@ def run_cnn_model(cnn_model="apriltag_regressor_finetuned.keras", interval_time=
                         cv2.imshow('ESP32 Stream', img)
 
                         img_input = preprocess_image(img)
-                        corner_pred = corners_model.predict(img_input, verbose=0)[0]
-                        pred_corners_px = corner_pred.copy()
-                        pred_corners_px[0::2] *= OG_W
-                        pred_corners_px[1::2] *= OG_H
-                        corners = pred_corners_px.reshape(4, 2)
+                        if not is_apriltag_present(img_input):
+                            print("No apriltags here")
+                            forward_distance = -1.0
+                            payload = {
+                                "device_id": "cam01",
+                                "distance": -1.0,
+                                "timestamp": time.time(),
+                            }
+                        else:
+                            corner_pred = corners_model.predict(img_input, verbose=0)[0]
+                            pred_corners_px = corner_pred.copy()
+                            pred_corners_px[0::2] *= OG_W
+                            pred_corners_px[1::2] *= OG_H
+                            corners = pred_corners_px.reshape(4, 2)
+                            print("corners:", corners)
 
-                        forward_distance = calc_dist(corners)
-                        print(f"[INFO] Distance: {forward_distance:.3f}")
+                            forward_distance = calc_dist(corners)
+                            print(f"[INFO] Distance: {forward_distance:.3f}")
 
-                        payload = {
-                            "device_id": "cam01",
-                            "distance": float(forward_distance),
-                            "timestamp": time.time(),
-                        }
+                            payload = {
+                                "device_id": "cam01",
+                                "distance": float(forward_distance),
+                                "timestamp": time.time(),
+                            }
 
                         try:
                             resp = requests.post("http://localhost:5000/distance", json=payload, timeout=interval_time)

@@ -13,4 +13,4 @@ def approximate_camera_matrix(img_width, img_height):
 
     return camera_matrix
 
-print(approximate_camera_matrix(320, 240))
+print(approximate_camera_matrix(240, 240))
