@@ -17,6 +17,9 @@ def calc_dist(corners):
         ],
         dtype=np.float32,
     )
+    
+    if np.mean(image_points) < 10:
+        return -1
 
     S = 0.10  # tag side in meters
 
