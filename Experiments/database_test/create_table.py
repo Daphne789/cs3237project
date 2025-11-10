@@ -10,10 +10,22 @@ conn = psycopg2.connect(
 
 cur = conn.cursor()
 
-cur.execute("""CREATE TABLE movement_data(
+# cur.execute("""CREATE TABLE imu_data(
+#             id SERIAL PRIMARY KEY,
+#             speed DECIMAL(10, 3) NOT NULL,
+#             yaw_rate_dps DECIMAL(10, 3) NOT NULL,
+#             turn_angle_deg DECIMAL(10, 3) NOT NULL,
+#             left_speed DECIMAL(10, 3) NOT NULL,
+#             right_speed DECIMAL(10, 3) NOT NULL,
+#             timestamp TIMESTAMPTZ NOT NULL
+#             );
+#             """)
+
+cur.execute("""
+            CREATE TABLE test_table(
             id SERIAL PRIMARY KEY,
-            direction VARCHAR (50) UNIQUE NOT NULL,
-            speed DECIMAL(10, 2) UNIQUE NOT NULL
+            distance DECIMAL(10, 3) NOT NULL,
+            command varchar(255)
             );
             """)
 
