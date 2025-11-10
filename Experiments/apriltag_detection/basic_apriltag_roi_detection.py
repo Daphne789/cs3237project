@@ -14,6 +14,30 @@ def initialise_detector():
         decode_sharpening=0.25,
         debug=0
     )
+    
+def is_apriltag_present(img_array):
+    img_array = (img_array * 255).astype(np.uint8)
+    img_array = img_array[0, :, :, 0]
+    detector = initialise_detector()
+    # img_array = cv2.cvtColor(img_array, cv2.COLOR_RGBA2GRAY)
+    detection = detector.detect(img_array)
+    
+    return len(detection) > 0
+
+def compute_corners_from_img(img_array):
+    img_array = (img_array * 255).astype(np.uint8)
+    img_array = img_array[0, :, :, 0]
+    detector = initialise_detector()
+    # img_array = cv2.cvtColor(img_array, cv2.COLOR_RGBA2GRAY)
+    detection = detector.detect(img_array)
+    
+    all_corners = []
+    
+    for det in detection:
+        corners = det.corners
+        all_corners.append(corners)
+        
+    return np.array(all_corners)
 
 def detect_apriltag_from_array(img_array, detector, is_plot=True):    
     img_array = cv2.cvtColor(img_array, cv2.COLOR_RGBA2GRAY) #change rgba to black and white channels
