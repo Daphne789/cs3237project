@@ -1,47 +1,56 @@
 from flask import Flask, request, jsonify
+import time
 
 app = Flask(__name__)
 
 distance_data = {} # in memory temp storage 
 
-@app.route('/distance', methods=['POST'])
-def receive_distance():
+@app.post('/distance')
+def post_distance():
     global distance_data
     
-    data = request.get_json()
+    data = request.get_json() or {}
     
-    if data and 'distance' in data:
-        print("Received data:", data)
+    if "distance" not in data:
+        return{
+            "ok": False,
+            "error": "Missing [distance] field in request."
+        }, 400
+    
+    distance_data = {
+        "device_id": data.get("device_id", "unknown_device"),
+        "distance": float(data.get("distance", -1.0)),
+        "timestamp": data.get("timestamp", time.time())
+    }
+    print("Received data:", data)
         
-        distance_data = data # overwrite existing data with latest received data
-        
-        return jsonify({
-            "status": "ok", 
-            "message": "Distance successfully stored.",
-            "data": data # echoes back received data
-        }), 200
-    else:
-        return jsonify({
-            "status": "error",
-            "message": "Invalid or missing JSON data."
-        }), 400
+    return {
+        "ok": True,
+        "message": "Distance val successfully stored.",
+        "data": distance_data
+    }
 
 # returns stored distance data, just retreives last recorded data
-@app.route('/getDistance', methods=['GET'])
-def print_distance():
+@app.get('/getDistance')
+def get_distance():
     global distance_data
     
-    if distance_data:
-        return jsonify({
-            "status": "success",
-            "message": "Latest distance reading retrieved.",
-            "data": distance_data
-        }), 200
-    else: #empty cuz post endpoint not hit yet 
-        return jsonify({
-            "status": "error",
-            "message": "No distance data has been recorded yet."
-        }), 404 # could use 204 to indicate no content 
+    if not distance_data: #empty cuz post endpoint not hit yet 
+        return{
+            "ok": False, 
+            "error": "404, Distance probably not recorded"
+        }, 404
+    
+    latest = distance_data
+    
+    return {
+        "ok": True,
+        "data": {
+            "device_id": latest.get("device_id", "unknown_device"),
+            "distance": float(latest.get("distance", -1.0)),
+            "timestamp": latest.get("timestamp", time.time())
+        }
+    }
 
 if __name__ == "__main__":
     app.run(host='0.0.0.0', port=5000)

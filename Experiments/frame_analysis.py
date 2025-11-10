@@ -58,7 +58,7 @@ def run_cnn_model(cnn_model="apriltag_regressor_finetuned.keras", interval_time=
                         print(f"[INFO] Distance: {forward_distance:.3f}")
 
                         payload = {
-                            "device_id": "imu01",
+                            "device_id": "cam01",
                             "distance": float(forward_distance),
                             "timestamp": time.time(),
                         }
@@ -83,4 +83,4 @@ def run_cnn_model(cnn_model="apriltag_regressor_finetuned.keras", interval_time=
         print("Stream closed")
 
 if __name__ == "__main__":
-    run_cnn_model(interval_time=1.0)
+    run_cnn_model(interval_time=0.1)
