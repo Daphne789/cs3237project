@@ -53,10 +53,12 @@ def run_cnn_model(cnn_model="apriltag_regressor_finetuned.keras", interval_time=
                             payload = {
                                 "device_id": "cam01",
                                 "distance": -1.0,
+                                "is_apriltag_present": False,
                                 "timestamp": time.time(),
                             }
                         else:
-                            corner_pred = corners_model.predict(img_input, verbose=0)[0]
+                            corners_pred = compute_corners_from_img(img_input)
+                            #corner_pred = corners_model.predict(img_input, verbose=0)[0]
                             pred_corners_px = corner_pred.copy()
                             pred_corners_px[0::2] *= OG_W
                             pred_corners_px[1::2] *= OG_H
@@ -69,6 +71,7 @@ def run_cnn_model(cnn_model="apriltag_regressor_finetuned.keras", interval_time=
                             payload = {
                                 "device_id": "cam01",
                                 "distance": float(forward_distance),
+                                "is_apriltag_present": True,
                                 "timestamp": time.time(),
                             }
 

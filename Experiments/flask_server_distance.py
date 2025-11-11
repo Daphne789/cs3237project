@@ -20,6 +20,7 @@ def post_distance():
     distance_data = {
         "device_id": data.get("device_id", "unknown_device"),
         "distance": float(data.get("distance", -1.0)),
+        "is_apriltag_present": bool(data.get("is_apriltag_present", False)),
         "timestamp": data.get("timestamp", time.time())
     }
     print("Received data:", data)
