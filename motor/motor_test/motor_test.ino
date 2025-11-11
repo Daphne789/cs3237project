@@ -51,6 +51,8 @@ int motorSpeed = 255;
 #define SIDE_RIGHT "6"
 #define FULL_TURN "7"
 #define JUMP "8"
+#define TOO_FAR "9"
+#define TOO_NEAR "10"
 
 #define TIME 1000
 #define ROTATE_TIME 1350
@@ -72,9 +74,9 @@ void offAllMotor();
 // const char* ssid = "aaaaaaaa";
 // const char* password = "88888888";
 // const char* serverName = "http://10.235.243.246:5000/";
-const char* ssid = "aaaaaaaa";
+const char* ssid = "UGLEE-CAM-WIFI";
 const char* password = "88888888";
-const char* serverName = "http://10.235.243.83:5002/fetchData";
+const char* serverName = "http://192.168.4.5:5002/fetchData";
 
 void IRAM_ATTR isr() {
     buttonPressedFlag = true;
@@ -208,7 +210,24 @@ void loop() {
 }
 
 void executeCommand(String command) {
-    if (command == FORWARD) {
+    if (command == JUMP) {
+        offAllMotor();
+        Serial.println("jump");
+        digitalWrite(RED_LED, HIGH);
+        delay(500);
+        for(;;);
+    }
+    else if (command == TOO_FAR) {
+        moveForward(TIME);
+        //BUZZ
+        Serial.println("too far");
+    }
+    else if (command == TOO_NEAR) {
+        offAllMotor();
+        //BUZZ
+        Serial.println("too near");
+    }
+    else if (command == FORWARD) {
         moveForward(TIME);
         Serial.println("forward");
     }
@@ -239,12 +258,6 @@ void executeCommand(String command) {
     else if (command == FULL_TURN) {
         moveRotate(ROTATE_TIME);
         Serial.println("full rotate");
-    } else if (command == JUMP) {
-        offAllMotor();
-        Serial.println("jump");
-        digitalWrite(RED_LED, HIGH);
-        delay(500);
-        for(;;);
     }
     else if (command == STOP || command == "") {
         offAllMotor();
