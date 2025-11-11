@@ -39,6 +39,10 @@ int RED_LED = 25;
 //WIFI LED
 int WIFI_LED = 32;
 
+// Stop-signal input from obstacle ESP32
+int MOTOR_STOP_PIN = 4;  // must connect to Obstacle ESP32 GPIO4
+bool obstacleActive = false;
+
 String currentCommand = "0";
 int motorSpeed = 255;
 
@@ -50,7 +54,6 @@ int motorSpeed = 255;
 #define SIDE_LEFT "5"
 #define SIDE_RIGHT "6"
 #define FULL_TURN "7"
-#define JUMP "8"
 
 #define TIME 1000
 #define ROTATE_TIME 1350
@@ -69,12 +72,9 @@ void offAllMotor();
 // const char* ssid = "Galaxy A53 5G225D";
 // const char* password = "sdci3924";
 // const char* serverName = "http://10.81.21.177:5000/control";
-// const char* ssid = "aaaaaaaa";
-// const char* password = "88888888";
-// const char* serverName = "http://10.235.243.246:5000/";
 const char* ssid = "aaaaaaaa";
 const char* password = "88888888";
-const char* serverName = "http://10.235.243.83:5002/fetchData";
+const char* serverName = "http://10.235.243.246:5000/";
 
 void IRAM_ATTR isr() {
     buttonPressedFlag = true;
@@ -99,6 +99,7 @@ void setup() {
     pinMode(DIN2, OUTPUT);
     pinMode(RED_LED, OUTPUT);
     pinMode(BUTTON_PIN, INPUT_PULLUP);
+    pinMode(MOTOR_STOP_PIN, INPUT);
     pinMode(WIFI_LED, OUTPUT);
 
     digitalWrite(WIFI_LED, LOW);
@@ -148,6 +149,25 @@ void setup() {
 void loop() {
     currentTime = millis();
 
+    static bool lastObstacleState = false;  // tracks previous signal state
+    obstacleActive = digitalRead(MOTOR_STOP_PIN);
+
+    // Obstacle newly detected (HIGH after LOW)
+    if (obstacleActive && !lastObstacleState) {
+        Serial.println("Obstacle detected — slowing down...");
+        gradualStop();
+    }
+
+    // Obstacle cleared (LOW after HIGH)
+    if (!obstacleActive && lastObstacleState) {
+        Serial.println("Path cleared — resuming smoothly...");
+        gradualStart();
+    }
+    lastObstacleState = obstacleActive;  // update for next cycle
+
+    // // If obstacle is still present, do nothing
+    // if (obstacleActive) return;
+
     // HTTP
     if (WiFi.status() == WL_CONNECTED) {
         digitalWrite(WIFI_LED, HIGH);
@@ -173,6 +193,8 @@ void loop() {
             currentCommand = "0";
             Serial.println(httpResponseCode);
         }
+
+        if (obstacleActive) currentCommand = "0";
 
         http.end();
     } else {
@@ -207,6 +229,43 @@ void loop() {
     delay(50);
 }
 
+// Gradually reduce motor speed before stopping
+void gradualStop() {
+    analogWrite(PWMA, motorSpeed * 0.7);
+    analogWrite(PWMB, motorSpeed * 0.7);
+    analogWrite(PWMC, motorSpeed * 0.7);
+    analogWrite(PWMD, motorSpeed * 0.7);
+    delay(200);
+    analogWrite(PWMA, motorSpeed * 0.5);
+    analogWrite(PWMB, motorSpeed * 0.5);
+    analogWrite(PWMC, motorSpeed * 0.5);
+    analogWrite(PWMD, motorSpeed * 0.5);
+    delay(200);
+    offAllMotor();
+    Serial.println("Motors stopped completely.");
+}
+
+// Gradually increase motor speed from stop to full
+void gradualStart() {
+    // ramp up from standstill to full power
+    analogWrite(PWMA, motorSpeed * 0.5);
+    analogWrite(PWMB, motorSpeed * 0.5);
+    analogWrite(PWMC, motorSpeed * 0.5);
+    analogWrite(PWMD, motorSpeed * 0.5);
+    delay(200);
+    analogWrite(PWMA, motorSpeed * 0.7);
+    analogWrite(PWMB, motorSpeed * 0.7);
+    analogWrite(PWMC, motorSpeed * 0.7);
+    analogWrite(PWMD, motorSpeed * 0.7);
+    delay(200);
+    analogWrite(PWMA, motorSpeed);
+    analogWrite(PWMB, motorSpeed);
+    analogWrite(PWMC, motorSpeed);
+    analogWrite(PWMD, motorSpeed);
+    delay(100);
+    Serial.println("Motors resumed to full speed.");
+}
+
 void executeCommand(String command) {
     if (command == FORWARD) {
         moveForward(TIME);
@@ -217,16 +276,12 @@ void executeCommand(String command) {
         Serial.println("backward");
     }
     else if (command == TURN_LEFT) {
-        moveForward(TIME);
         moveTurnLeft(ROTATE_TIME);
         Serial.println("rotate left");
-        delay(1000);
     } 
     else if (command == TURN_RIGHT) {
-        moveForward(TIME);
         moveTurnRight(ROTATE_TIME);
         Serial.println("rotate right");
-        delay(1000);
     }
     else if (command == SIDE_LEFT) {
         moveSideLeft(TIME);
@@ -239,12 +294,6 @@ void executeCommand(String command) {
     else if (command == FULL_TURN) {
         moveRotate(ROTATE_TIME);
         Serial.println("full rotate");
-    } else if (command == JUMP) {
-        offAllMotor();
-        Serial.println("jump");
-        digitalWrite(RED_LED, HIGH);
-        delay(500);
-        for(;;);
     }
     else if (command == STOP || command == "") {
         offAllMotor();

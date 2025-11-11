@@ -1,17 +1,19 @@
 import psycopg2
 
-conn = psycopg2.connect(
-    database="postgres",
-    user="postgres",
-    host="localhost",
-    password="11223344",
-    port=5431,
-)
 
-cur = conn.cursor()
+def insert_data():
+    conn = psycopg2.connect(
+        database="postgres",
+        user="postgres",
+        host="localhost",
+        password="11223344",
+        port=5431,
+    )
 
-cur.execute("INSERT INTO movement_data(direction, speed) VALUES('Right', 10)")
+    cur = conn.cursor()
 
-conn.commit()
-cur.close()
-conn.close()
+    cur.execute("INSERT INTO movement_data(direction, speed) VALUES('Right', 10)")
+
+    conn.commit()
+    cur.close()
+    conn.close()
