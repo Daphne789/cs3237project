@@ -50,6 +50,7 @@ int motorSpeed = 255;
 #define SIDE_LEFT "5"
 #define SIDE_RIGHT "6"
 #define FULL_TURN "7"
+#define JUMP "8"
 
 #define TIME 1000
 #define ROTATE_TIME 1350
@@ -68,9 +69,12 @@ void offAllMotor();
 // const char* ssid = "Galaxy A53 5G225D";
 // const char* password = "sdci3924";
 // const char* serverName = "http://10.81.21.177:5000/control";
+// const char* ssid = "aaaaaaaa";
+// const char* password = "88888888";
+// const char* serverName = "http://10.235.243.246:5000/";
 const char* ssid = "aaaaaaaa";
 const char* password = "88888888";
-const char* serverName = "http://10.235.243.246:5000/";
+const char* serverName = "http://10.235.243.83:5002/fetchData";
 
 void IRAM_ATTR isr() {
     buttonPressedFlag = true;
@@ -213,12 +217,16 @@ void executeCommand(String command) {
         Serial.println("backward");
     }
     else if (command == TURN_LEFT) {
+        moveForward(TIME);
         moveTurnLeft(ROTATE_TIME);
         Serial.println("rotate left");
+        delay(1000);
     } 
     else if (command == TURN_RIGHT) {
+        moveForward(TIME);
         moveTurnRight(ROTATE_TIME);
         Serial.println("rotate right");
+        delay(1000);
     }
     else if (command == SIDE_LEFT) {
         moveSideLeft(TIME);
@@ -231,6 +239,12 @@ void executeCommand(String command) {
     else if (command == FULL_TURN) {
         moveRotate(ROTATE_TIME);
         Serial.println("full rotate");
+    } else if (command == JUMP) {
+        offAllMotor();
+        Serial.println("jump");
+        digitalWrite(RED_LED, HIGH);
+        delay(500);
+        for(;;);
     }
     else if (command == STOP || command == "") {
         offAllMotor();
