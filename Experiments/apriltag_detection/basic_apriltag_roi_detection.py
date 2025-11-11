@@ -24,12 +24,22 @@ def is_apriltag_present(img_array):
     
     return len(detection) > 0
 
+def compute_centre_from_img(img_array):
+    img_array = (img_array * 255).astype(np.uint8)
+    img_array = img_array[0, :, :, 0]
+    detector = initialise_detector()
+    # img_array = cv2.cvtColor(img_array, cv2.COLOR_RGBA2GRAY)
+    detection = detector.detect(img_array)
+    
+    return detection.center;
+
 def compute_corners_from_img(img_array):
     img_array = (img_array * 255).astype(np.uint8)
     img_array = img_array[0, :, :, 0]
     detector = initialise_detector()
     # img_array = cv2.cvtColor(img_array, cv2.COLOR_RGBA2GRAY)
     detection = detector.detect(img_array)
+    print("detection:", detection)
     
     all_corners = []
     
