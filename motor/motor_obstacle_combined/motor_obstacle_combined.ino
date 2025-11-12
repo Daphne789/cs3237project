@@ -111,7 +111,8 @@ void beepBothBuzzers();
 // const char* serverName = "http://10.81.21.177:5000/control";
 const char* ssid = "aaaaaaaa";
 const char* password = "88888888";
-const char* serverName = "http://10.235.243.246:5000/";
+// const char* serverName = "http://10.235.243.246:5000/";
+const char* serverName = "http://192.168.4.5:5000/fetchData";
 
 void IRAM_ATTR isr() {
     buttonPressedFlag = true;
