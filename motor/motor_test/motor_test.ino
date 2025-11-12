@@ -68,15 +68,18 @@ void testMapping();
 void offAllMotor();
 
 // http
-// const char* ssid = "Galaxy A53 5G225D";
-// const char* password = "sdci3924";
-// const char* serverName = "http://10.81.21.177:5000/control";
+const char* ssid = "Galaxy A53 5G225D";
+const char* password = "sdci3924";
+const char* serverName = "http://10.150.80.246:5002/fetchData";
 // const char* ssid = "aaaaaaaa";
 // const char* password = "88888888";
 // const char* serverName = "http://10.235.243.246:5000/";
-const char* ssid = "UGLEE-CAM-WIFI";
-const char* password = "88888888";
-const char* serverName = "http://192.168.4.5:5002/fetchData";
+// const char* ssid = "UGLL-E-CAM-WIFI";
+// const char* password = "88888888";
+// const char* serverName = "http://192.168.4.6:5002/fetchData";
+
+unsigned long lastCommandTime = 0;
+const unsigned long COMMAND_TIMEOUT = 5000; // 5 seconds
 
 void IRAM_ATTR isr() {
     buttonPressedFlag = true;
@@ -144,7 +147,7 @@ void setup() {
     analogWrite(PWMA, motorSpeed);
     analogWrite(PWMB, motorSpeed);
     analogWrite(PWMC, motorSpeed);
-    analogWrite(PWMD, motorSpeed);
+    analogWrite(PWMD, motorSpeed - 20);
 }
 
 void loop() {
@@ -159,16 +162,25 @@ void loop() {
         int httpResponseCode = http.GET();
         
         if (httpResponseCode > 0) {
-            // Serial.print("HTTP Response code: ");
-            // Serial.println(httpResponseCode);
+            Serial.print("HTTP Response code: ");
+            Serial.println(httpResponseCode);
             
             // Get the response payload
+            // String command = http.getString();
+            // if (command != currentCommand) {
+            //     currentCommand = command;
+            //     Serial.print("New command: ");
+            //     Serial.println(currentCommand);
+            // }
             String command = http.getString();
-            if (command != currentCommand) {
+            command.trim();
+
+            if (command != "" && command != currentCommand) {
                 currentCommand = command;
                 Serial.print("New command: ");
                 Serial.println(currentCommand);
             }
+            lastCommandTime = millis(); // reset timer when command received
         }
         else {
             Serial.print("Error code: ");
@@ -206,7 +218,6 @@ void loop() {
     }
 
     executeCommand(currentCommand);
-    delay(50);
 }
 
 void executeCommand(String command) {
@@ -239,13 +250,13 @@ void executeCommand(String command) {
         moveForward(TIME);
         moveTurnLeft(ROTATE_TIME);
         Serial.println("rotate left");
-        delay(1000);
+        // delay(1000);
     } 
     else if (command == TURN_RIGHT) {
         moveForward(TIME);
         moveTurnRight(ROTATE_TIME);
         Serial.println("rotate right");
-        delay(1000);
+        // delay(1000);
     }
     else if (command == SIDE_LEFT) {
         moveSideLeft(TIME);
