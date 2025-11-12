@@ -33,15 +33,15 @@ def get_db_connection():
 @app.route("/fetchData", methods=["GET"])
 def fetch_distance_from_other_server():
     try:
-        responseDist = requests.get("http://localhost:5001/getDistance", timeout=5)
-        responseImu = requests.get("http://10.235.243.177:5000/control", timeout=5)
+        responseDist = requests.get("http://192.168.4.6:5001/getDistance", timeout=5)
+        responseImu = requests.get("http://192.168.4.6:5000/control", timeout=5)
 
-        print(responseDist.json())
+        # print(responseDist.json())
         print(responseImu.json())
         responseDist.raise_for_status()
         responseImu.raise_for_status()
 
-        distance = responseDist.json()["data"]["distance"]
+        distance = float(responseDist.json()["data"]["distance"])
         command = responseImu.json()["command"]
 
         # with get_db_connection() as conn:
@@ -51,7 +51,19 @@ def fetch_distance_from_other_server():
         #             (distance, command),
         #         )
 
-        if command == "STRAIGHT":
+        # 9 too far >= 55
+        # 10 too near <= 22
+        print(distance)
+
+        if command == "JUMP":
+            commandNum = 8
+        elif distance == -1:
+            commandNum = 0
+        elif distance >= 55:
+            commandNum = 9
+        elif distance <= 25:
+            commandNum = 10
+        elif command == "STRAIGHT":
             commandNum = 1
         elif command == "BACKWARD":
             commandNum = 2
