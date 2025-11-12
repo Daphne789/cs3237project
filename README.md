@@ -1,4 +1,4 @@
-# C3237 Group Project: UGLL-E
+# C3237 Group Project: UGLL-E and EVE
 Group Members: Stanley Wijaya, Ella Yovita Suwibowo, Hu Chong Xern, Evan Zhao, Daphne Shaine Wilhelmina
 
 ## Master Document
