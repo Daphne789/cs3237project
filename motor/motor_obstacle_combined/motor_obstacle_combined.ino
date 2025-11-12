@@ -46,8 +46,8 @@ int WIFI_LED = 32;
 
 // Stop-signal input from obstacle ESP32
 bool obstacleActive = false;
-const int PIN_TRIG = 35;
-const int PIN_ECHO = 34;
+const int PIN_TRIG = 4;
+const int PIN_ECHO = 35;
 
 const int PIN_BUZZER_PASSIVE = 23;
 const int PIN_BUZZER_ACTIVE  = 22;
@@ -143,6 +143,8 @@ void setup() {
     pinMode(PIN_BUZZER_ACTIVE, OUTPUT);
 
     digitalWrite(WIFI_LED, LOW);
+    digitalWrite(PIN_BUZZER_ACTIVE, LOW);
+    noTone(PIN_BUZZER_PASSIVE);
 
     esp_sleep_wakeup_cause_t wakeup_reason = esp_sleep_get_wakeup_cause();
 
@@ -184,6 +186,9 @@ void setup() {
     analogWrite(PWMB, motorSpeed);
     analogWrite(PWMC, motorSpeed);
     analogWrite(PWMD, motorSpeed);
+
+    // Blynk.begin(BLYNK_AUTH_TOKEN, ssid, pass);
+    timer.setInterval(100L, checkObstacle);
 }
 
 void loop() {
@@ -194,7 +199,7 @@ void loop() {
 
     // static bool lastObstacleState = false;  // tracks previous signal state
 
-    checkObstacle();
+    // checkObstacle();
 
     // // Obstacle newly detected (HIGH after LOW)
     // if (obstacleActive && !lastObstacleState) {
