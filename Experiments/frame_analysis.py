@@ -47,16 +47,12 @@ def run_cnn_model(cnn_model="apriltag_regressor_finetuned.keras", interval_time=
                         cv2.imshow('ESP32 Stream', img)
 
                         img_input = preprocess_image(img)
+                        computed_center = [-1, -1]
+                        
                         if not is_apriltag_present(img_input):
                             print("No apriltags here")
                             forward_distance = -1.0
-                            payload = {
-                                "device_id": "cam01",
-                                "distance": -1.0,
-                                "is_apriltag_present": False,
-                                "apriltag_center": [-1, -1],
-                                "timestamp": time.time(),
-                            }
+                            is_tag_present = False
                         else:
                             corner_pred = compute_corners_from_img(img_input)
                             computed_center = compute_center_from_corners(corner_pred)
@@ -69,17 +65,18 @@ def run_cnn_model(cnn_model="apriltag_regressor_finetuned.keras", interval_time=
 
                             forward_distance = calc_dist(corners)
                             print(f"[INFO] Distance: {forward_distance:.3f}")
+                            is_tag_present = True
 
-                            payload = {
-                                "device_id": "cam01",
-                                "distance": float(forward_distance),
-                                "is_apriltag_present": True,
-                                "apriltag_center": computed_center,
-                                "timestamp": time.time(),
-                            }
+                        payload = {
+                            "device_id": "cam01",
+                            "distance": float(forward_distance),
+                            "is_apriltag_present": is_tag_present,
+                            "apriltag_center": computed_center.tolist() if isinstance(computed_center, np.ndarray) else computed_center,
+                            "timestamp": time.time(),
+                        }
 
                         try:
-                            resp = requests.post("http://localhost:5000/distance", json=payload, timeout=interval_time)
+                            resp = requests.post("http://localhost:5001/distance", json=payload, timeout=interval_time)
                             if resp.ok:
                                 print("Sent distance of", forward_distance)
                             else:

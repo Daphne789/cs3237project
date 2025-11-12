@@ -8,12 +8,13 @@ import cv2
 #  [203.26782227  37.59911728]
 #  [120.57845306  32.17260361]]
 def calc_dist(corners):
+    # Assumes [0] = Top-Left [1] = Top-Right [2] = Bottom-Right [3] = Bottom-Left
     image_points = np.array(
         [
-            [corners[3]],  # pixel coords of top-left corner
-            [corners[2]],  # top-right
-            [corners[1]],  # bottom-right
-            [corners[0]],  # bottom-left
+            [corners[0]],  # pixel coords of top-left corner
+            [corners[1]],  # top-right
+            [corners[2]],  # bottom-right
+            [corners[3]],  # bottom-left
         ],
         dtype=np.float32,
     )
@@ -34,7 +35,11 @@ def calc_dist(corners):
     )
 
     # Camera intrinsics
-    K = np.array([[320, 0, 160], [0, 320, 120], [0, 0, 1]], dtype=np.float64)
+    K = np.array([
+        [240, 0, 120], 
+        [0, 240, 120], 
+        [0, 0, 1]
+    ], dtype=np.float64)
     dist = np.zeros(5)
 
     # Solve PnP
@@ -53,4 +58,8 @@ def calc_dist(corners):
     # print("forward distance (m):", forward_distance)
     # print("euclidean distance (m):", euclidean_distance)
 
-    return forward_distance
+    return forward_distance * 10000 # return in cm
+
+def compute_center_from_corners(corners_arr):
+    sum_coords = np.sum(corners_arr, axis=0)
+    return sum_coords / 4.0
