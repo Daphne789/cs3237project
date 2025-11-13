@@ -68,15 +68,15 @@ void testMapping();
 void offAllMotor();
 
 // http
-const char* ssid = "Galaxy A53 5G225D";
-const char* password = "sdci3924";
-const char* serverName = "http://10.150.80.246:5002/fetchData";
+// const char* ssid = "Galaxy A53 5G225D";
+// const char* password = "sdci3924";
+// const char* serverName = "http://10.150.80.246:5002/fetchData";
 // const char* ssid = "aaaaaaaa";
 // const char* password = "88888888";
 // const char* serverName = "http://10.235.243.246:5000/";
-// const char* ssid = "UGLL-E-CAM-WIFI";
-// const char* password = "88888888";
-// const char* serverName = "http://192.168.4.6:5002/fetchData";
+const char* ssid = "UGLL-E-CAM-WIFI";
+const char* password = "88888888";
+const char* serverName = "http://192.168.4.4:5002/fetchData";
 
 unsigned long lastCommandTime = 0;
 const unsigned long COMMAND_TIMEOUT = 5000; // 5 seconds
@@ -247,13 +247,13 @@ void executeCommand(String command) {
         Serial.println("backward");
     }
     else if (command == TURN_LEFT) {
-        moveForward(TIME);
+        moveForward(3*TIME);
         moveTurnLeft(ROTATE_TIME);
         Serial.println("rotate left");
         // delay(1000);
     } 
     else if (command == TURN_RIGHT) {
-        moveForward(TIME);
+        moveForward(3*TIME);
         moveTurnRight(ROTATE_TIME);
         Serial.println("rotate right");
         // delay(1000);
