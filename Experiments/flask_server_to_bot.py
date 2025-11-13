@@ -71,8 +71,6 @@ def fetch_distance_from_other_server():
             commandNum = 6
         elif command == "FULL_TURN":
             commandNum = 7
-        elif command == "JUMP":
-            commandNum = 8
         else:
             commandNum = 0
         print(commandNum)
