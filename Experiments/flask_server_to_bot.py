@@ -33,37 +33,31 @@ def get_db_connection():
 @app.route("/fetchData", methods=["GET"])
 def fetch_distance_from_other_server():
     try:
-        responseDist = requests.get("http://192.168.4.6:5001/getDistance", timeout=5)
-        responseImu = requests.get("http://192.168.4.6:5000/control", timeout=5)
+        responseDist = requests.get("http://192.168.4.4:5001/getDistance", timeout=5)
+        responseImu = requests.get("http://192.168.4.4:5000/control", timeout=5)
 
-        # print(responseDist.json())
-        print(responseImu.json())
         responseDist.raise_for_status()
         responseImu.raise_for_status()
 
         distance = float(responseDist.json()["data"]["distance"])
         command = responseImu.json()["command"]
+        turn_angle_deg = responseImu.json()["turn_angle_deg"]
+        is_april = responseDist.json()["data"]["is_apriltag_present"]
+        timestamp = responseImu.json()["timestamp"]
 
-        # with get_db_connection() as conn:
-        #     with conn.cursor() as cur:
-        #         cur.execute(
-        #             "INSERT INTO test_table (distance, command) VALUES (%s, %s)",
-        #             (distance, command),
-        #         )
+        with get_db_connection() as conn:
+            with conn.cursor() as cur:
+                cur.execute(
+                    "INSERT INTO imu_cam_data (command, turn_angle_deg, distance, is_april, timestamp) VALUES (%s, %s, %s, %s, %s)",
+                    (command, turn_angle_deg, distance, is_april, timestamp),
+                )
 
-        # 9 too far >= 55
-        # 10 too near <= 22
+        print(command)
         print(distance)
 
         if command == "JUMP":
             commandNum = 8
-        elif distance == -1:
-            commandNum = 0
-        elif distance >= 55:
-            commandNum = 9
-        elif distance <= 25:
-            commandNum = 10
-        elif command == "STRAIGHT":
+        elif command == "STRAIGHT" and distance != -1:
             commandNum = 1
         elif command == "BACKWARD":
             commandNum = 2
@@ -81,7 +75,7 @@ def fetch_distance_from_other_server():
             commandNum = 8
         else:
             commandNum = 0
-
+        print(commandNum)
         return str(commandNum)
 
     except requests.exceptions.RequestException as e:

@@ -6,12 +6,6 @@
 // ===========================
 #include "board_config.h"
 
-// ===========================
-// Enter your WiFi credentials
-// ===========================
-const char *ssid = "Iphone";
-const char *password = "password";
-
 void startCameraServer();
 void setupLedFlash();
 
@@ -40,8 +34,10 @@ void setup() {
   config.pin_pwdn = PWDN_GPIO_NUM;
   config.pin_reset = RESET_GPIO_NUM;
   config.xclk_freq_hz = 16000000;
-  config.frame_size = FRAMESIZE_UXGA;
-  config.pixel_format = PIXFORMAT_JPEG;  // for streaming
+  config.pixel_format = PIXFORMAT_GRAYSCALE; // for streaming, use PIXFORMAT_
+  config.frame_size = FRAMESIZE_QVGA;
+  // config.frame_size = FRAMESIZE_UXGA;
+  // config.pixel_format = PIXFORMAT_JPEG;  
   //config.pixel_format = PIXFORMAT_RGB565; // for face detection/recognition
   config.grab_mode = CAMERA_GRAB_WHEN_EMPTY;
   config.fb_location = CAMERA_FB_IN_PSRAM;
@@ -121,8 +117,8 @@ void setup() {
   // Serial.println("");
   // Serial.println("WiFi connected");
 
-  const char* ap_ssid = "ESP32-CAM";
-  const char* ap_password = "66666666";
+  const char* ap_ssid = "UGLL-E-CAM-WIFI";
+  const char* ap_password = "88888888";
 
   WiFi.softAP(ap_ssid, ap_password);
   WiFi.setSleep(false);
