@@ -46,6 +46,9 @@ bool obstacleActive = false;
 String currentCommand = "0";
 int motorSpeed = 255;
 
+unsigned long lastCommandTime = 0;
+const unsigned long COMMAND_TIMEOUT = 5000; // 5 seconds
+
 #define STOP "0"
 #define FORWARD "1"
 #define BACKWARD "2"
@@ -54,6 +57,9 @@ int motorSpeed = 255;
 #define SIDE_LEFT "5"
 #define SIDE_RIGHT "6"
 #define FULL_TURN "7"
+#define JUMP "8"
+#define TOO_FAR "9"
+#define TOO_NEAR "10"
 
 #define TIME 1000
 #define ROTATE_TIME 1350
@@ -72,9 +78,11 @@ void offAllMotor();
 // const char* ssid = "Galaxy A53 5G225D";
 // const char* password = "sdci3924";
 // const char* serverName = "http://10.81.21.177:5000/control";
-const char* ssid = "aaaaaaaa";
+// const char* ssid = "aaaaaaaa";
+const char* ssid = "UGLL-E-CAM-WIFI";
 const char* password = "88888888";
-const char* serverName = "http://10.235.243.246:5000/";
+// const char* serverName = "http://10.235.243.246:5000/";
+const char* serverName = "http://192.168.4.4:5002/fetchData";
 
 void IRAM_ATTR isr() {
     buttonPressedFlag = true;
@@ -143,7 +151,7 @@ void setup() {
     analogWrite(PWMA, motorSpeed);
     analogWrite(PWMB, motorSpeed);
     analogWrite(PWMC, motorSpeed);
-    analogWrite(PWMD, motorSpeed);
+    analogWrite(PWMD, motorSpeed - 20);
 }
 
 void loop() {
@@ -181,12 +189,22 @@ void loop() {
             // Serial.println(httpResponseCode);
             
             // Get the response payload
+            // String command = http.getString();
+            // if (command != currentCommand) {
+            //     currentCommand = command;
+            //     Serial.print("New command: ");
+            //     Serial.println(currentCommand);
+            // }
+
             String command = http.getString();
-            if (command != currentCommand) {
+            command.trim();
+
+            if (command != "" && command != currentCommand) {
                 currentCommand = command;
                 Serial.print("New command: ");
                 Serial.println(currentCommand);
             }
+            lastCommandTime = millis(); // reset timer when command received
         }
         else {
             Serial.print("Error code: ");
@@ -194,7 +212,7 @@ void loop() {
             Serial.println(httpResponseCode);
         }
 
-        if (obstacleActive) currentCommand = "0";
+        if (obstacleActive) currentCommand = STOP;
 
         http.end();
     } else {
@@ -226,7 +244,6 @@ void loop() {
     }
 
     executeCommand(currentCommand);
-    delay(50);
 }
 
 // Gradually reduce motor speed before stopping
@@ -234,12 +251,12 @@ void gradualStop() {
     analogWrite(PWMA, motorSpeed * 0.7);
     analogWrite(PWMB, motorSpeed * 0.7);
     analogWrite(PWMC, motorSpeed * 0.7);
-    analogWrite(PWMD, motorSpeed * 0.7);
+    analogWrite(PWMD, (motorSpeed - 20) * 0.7);
     delay(200);
     analogWrite(PWMA, motorSpeed * 0.5);
     analogWrite(PWMB, motorSpeed * 0.5);
     analogWrite(PWMC, motorSpeed * 0.5);
-    analogWrite(PWMD, motorSpeed * 0.5);
+    analogWrite(PWMD, (motorSpeed - 20) * 0.5);
     delay(200);
     offAllMotor();
     Serial.println("Motors stopped completely.");
@@ -251,23 +268,38 @@ void gradualStart() {
     analogWrite(PWMA, motorSpeed * 0.5);
     analogWrite(PWMB, motorSpeed * 0.5);
     analogWrite(PWMC, motorSpeed * 0.5);
-    analogWrite(PWMD, motorSpeed * 0.5);
+    analogWrite(PWMD, (motorSpeed - 20) * 0.5);
     delay(200);
     analogWrite(PWMA, motorSpeed * 0.7);
     analogWrite(PWMB, motorSpeed * 0.7);
     analogWrite(PWMC, motorSpeed * 0.7);
-    analogWrite(PWMD, motorSpeed * 0.7);
+    analogWrite(PWMD, (motorSpeed - 20) * 0.7);
     delay(200);
     analogWrite(PWMA, motorSpeed);
     analogWrite(PWMB, motorSpeed);
     analogWrite(PWMC, motorSpeed);
-    analogWrite(PWMD, motorSpeed);
+    analogWrite(PWMD, motorSpeed - 20);
     delay(100);
     Serial.println("Motors resumed to full speed.");
 }
 
 void executeCommand(String command) {
-    if (command == FORWARD) {
+    if (command == JUMP) {
+        offAllMotor();
+        Serial.println("jump");
+        digitalWrite(RED_LED, HIGH);
+        delay(500);
+        for(;;);
+    }
+    else if (command == TOO_FAR) {
+        moveForward(TIME);
+        Serial.println("too far");
+    }
+    else if (command == TOO_NEAR) {
+        offAllMotor();
+        Serial.println("too near");
+    }
+    else if (command == FORWARD) {
         moveForward(TIME);
         Serial.println("forward");
     }
@@ -276,12 +308,16 @@ void executeCommand(String command) {
         Serial.println("backward");
     }
     else if (command == TURN_LEFT) {
+        moveForward(TIME * 2.5);
         moveTurnLeft(ROTATE_TIME);
         Serial.println("rotate left");
+        delay(1000);
     } 
     else if (command == TURN_RIGHT) {
+        moveForward(TIME * 2.5);
         moveTurnRight(ROTATE_TIME);
         Serial.println("rotate right");
+        delay(1000);
     }
     else if (command == SIDE_LEFT) {
         moveSideLeft(TIME);
