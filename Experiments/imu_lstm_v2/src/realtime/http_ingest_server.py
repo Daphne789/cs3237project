@@ -16,10 +16,10 @@ SRC_DIR = Path(__file__).resolve().parents[1]
 if str(SRC_DIR) not in sys.path:
     sys.path.insert(0, str(SRC_DIR))
 
-from Experiments.imu_lstm_v2.src.utils.io import load_joblib, load_json
-from Experiments.imu_lstm_v2.src.realtime.sliding_window import SlidingWindow
-from Experiments.imu_lstm_v2.src.models.lstm_v2 import LSTMIMU
-from Experiments.imu_lstm_v2.src.realtime.motion_control import (
+from utils.io import load_joblib, load_json
+from realtime.sliding_window import SlidingWindow
+from models.lstm_v2 import LSTMIMU
+from realtime.motion_control import (
     ensure_control_state,
     update_control,
 )
@@ -374,13 +374,16 @@ def _debounced_command(
         classes = list(state["le"].classes_)
         try:
             si = classes.index("straight")
-            li = classes.index("left"); ri = classes.index("right")
+            li = classes.index("left")
+            ri = classes.index("right")
         except ValueError:
             si = li = ri = None
         if si is not None:
             quiet_enter = state["quiet_enter"].get(device_id, None)
             is_quiet = bool(state["is_quiet"].get(device_id, False))
-            quiet_for_ms = (now_ts - quiet_enter) * 1000.0 if (is_quiet and quiet_enter) else 0.0
+            quiet_for_ms = (
+                (now_ts - quiet_enter) * 1000.0 if (is_quiet and quiet_enter) else 0.0
+            )
             pS = float(probs_s[si])
             pL = float(probs_s[li]) if li is not None else 0.0
             pR = float(probs_s[ri]) if ri is not None else 0.0
@@ -395,8 +398,12 @@ def _debounced_command(
                 return "STRAIGHT"
 
             # snap to STRAIGHT when both turns are weak and instantaneous quiet
-            if (g_mag < float(state["quiet_gyro"])) and (li is not None and ri is not None):
-                if (pL < float(state["turn_release_thr"])) and (pR < float(state["turn_release_thr"])):
+            if (g_mag < float(state["quiet_gyro"])) and (
+                li is not None and ri is not None
+            ):
+                if (pL < float(state["turn_release_thr"])) and (
+                    pR < float(state["turn_release_thr"])
+                ):
                     state["current_cmd"][device_id] = "STRAIGHT"
                     state["hist"][device_id].clear()
                     state.get("last_turn", {}).pop(device_id, None)
@@ -443,7 +450,7 @@ def _debounced_command(
                 and last.get("dir") == opp
                 and (now_ts - float(last.get("ts", 0.0))) * 1000.0 < guard_ms
             ):
-                pass # block opposite flicker briefly
+                pass  # block opposite flicker briefly
             else:
                 state["current_cmd"][device_id] = label.upper()
                 state["hist"][device_id].clear()
@@ -765,7 +772,7 @@ def flush_log(out_dir: str | None = None):
 def get_control(device_id: str = "imu01"):
     ensure_window(device_id)
     ctl = state.get("ctl", {}).get(device_id)
-    if not ctl: 
+    if not ctl:
         return {"ok": False, "error": "no control yet"}
     latest = state["latest"].get(device_id, {})
     return {
@@ -782,6 +789,7 @@ def get_control(device_id: str = "imu01"):
         "timestamp": time.time(),
     }
 
+
 @app.get("/command")
 def get_command(device_id: str = "imu01"):
     """
@@ -789,12 +797,14 @@ def get_command(device_id: str = "imu01"):
     """
     latest = state["latest"].get(device_id, {})
     return {
-        "ok": True, "device_id": device_id,
+        "ok": True,
+        "device_id": device_id,
         "command": latest.get("command", "NONE"),
         "label": latest.get("label", "NONE"),
         "confidence": float(latest.get("confidence", 0.0)),
-        "timestamp": float(latest.get("timestamp", time.time()))
+        "timestamp": float(latest.get("timestamp", time.time())),
     }
+
 
 @app.post("/reset_angle")
 def reset_angle(device_id: str = "imu01"):
@@ -1033,8 +1043,10 @@ if __name__ == "__main__":
     ap.add_argument("--acc_bias_alpha", type=float, default=0.01)
     ap.add_argument("--speed_floor", type=float, default=0.0)
     ap.add_argument("--auto_calib", type=int, default=0)
-    ap.add_argument("--turn_guard_ms", type=int, default=220)          # default stronger guard
-    ap.add_argument("--turn_release_thr", type=float, default=0.36)     # release to straight when both L/R < this
+    ap.add_argument("--turn_guard_ms", type=int, default=220)  # default stronger guard
+    ap.add_argument(
+        "--turn_release_thr", type=float, default=0.36
+    )  # release to straight when both L/R < this
     ap.add_argument("--straight_margin", type=float, default=0.05)
     args = ap.parse_args()
 
