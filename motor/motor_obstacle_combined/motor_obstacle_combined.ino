@@ -109,10 +109,11 @@ void beepBothBuzzers();
 // const char* ssid = "Galaxy A53 5G225D";
 // const char* password = "sdci3924";
 // const char* serverName = "http://10.81.21.177:5000/control";
+// const char* ssid = "UGLEE-CAM-WIFI";
 const char* ssid = "aaaaaaaa";
 const char* password = "88888888";
 // const char* serverName = "http://10.235.243.246:5000/";
-const char* serverName = "http://192.168.4.5:5000/fetchData";
+const char* serverName = "http://192.168.4.9:5002/fetchData";
 
 void IRAM_ATTR isr() {
     buttonPressedFlag = true;
@@ -189,7 +190,7 @@ void setup() {
     analogWrite(PWMD, motorSpeed);
 
     // Blynk.begin(BLYNK_AUTH_TOKEN, ssid, pass);
-    timer.setInterval(100L, checkObstacle);
+    // timer.setInterval(100L, checkObstacle);
 }
 
 void loop() {
@@ -200,7 +201,7 @@ void loop() {
 
     // static bool lastObstacleState = false;  // tracks previous signal state
 
-    // checkObstacle();
+    checkObstacle();
 
     // // Obstacle newly detected (HIGH after LOW)
     // if (obstacleActive && !lastObstacleState) {
